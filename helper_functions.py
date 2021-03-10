@@ -1,4 +1,9 @@
 import os
+import psycopg2
+
+DBNAME = "wier"
+USER = "postgres"
+PASSWORD = "admin"
 
 def append_to_file(path, data):
     with open(path, 'a') as file:
@@ -36,3 +41,22 @@ def set_to_file(links, file):
     delete_file_contents(file)
     for link in sorted(links):
         append_to_file(file, link)
+
+def insert_site(id, domain, robots, sitemap):
+    conn = psycopg2.connect("dbname="+DBNAME+" user="+USER+" password="+PASSWORD)
+    cur = conn.cursor()
+
+    query = "insert into crawldb.site(id, domain, robots_content, sitemap_content) VALUES ("+str(id)+", '"+domain+"', '"+robots+"', '"+sitemap+"')"
+
+    cur.execute(query)
+    conn.commit()
+    cur.close()
+
+def get_sites():
+    conn = psycopg2.connect("dbname="+DBNAME+" user="+USER+" password="+PASSWORD)
+    cur = conn.cursor()
+    query = "SELECT * FROM crawldb.site"
+    cur.execute(query)
+    wier = cur.fetchall()
+    cur.close()
+    return wier
