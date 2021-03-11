@@ -3,13 +3,12 @@ from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 from urllib import parse
+import urllib.request, urllib.robotparser
 import helper_functions as hf
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
 TIMEOUT = 5
-
-# Tutorial:  https://www.youtube.com/watch?v=nRW90GASSXE&list=PL6gx4Cwl9DGA8Vys-f48mAH9OKSUyav0q&ab_channel=thenewboston
 
 class Crawler:
 
@@ -26,18 +25,14 @@ class Crawler:
         Crawler.domain_name = domain_name # Domain name so we don't crawl the whole internet
         self.setup_crawler()
         self.crawl_page('Spider numero uno', Crawler.base_url)
-        print("2. Frontier (also in frontier.txt):")
-        print(Crawler.frontier)
 
     # Take the seed urls and insert them into the frontier. (just the first one... for now)
     @staticmethod
     def setup_crawler():
 
-        create_data_files(Crawler.base_url)
-        Crawler.frontier = file_to_set('frontier.txt')
-        print("1. Frontier is:")
-        print(Crawler.frontier)
-        Crawler.crawled = file_to_set('crawled.txt')
+        hf.create_data_files(Crawler.base_url)
+        Crawler.frontier = hf.file_to_set('frontier.txt')
+        Crawler.crawled = hf.file_to_set('crawled.txt')
 
     # Start crawling pages
     @staticmethod
@@ -45,10 +40,12 @@ class Crawler:
         # For now crawl only gov.si
         # Check if url has already been crawled
         if page_url not in Crawler.crawled:
-            print("Now crawling: " + page_url)
+            print(str(thread) + " now crawling: " + page_url)
+            print('Frontier ' + str(len(Crawler.frontier)) + ' | Crawled  ' + str(len(Crawler.crawled)))
 
             # Gather links
             gathered_links = Crawler.gather_links(page_url)
+            print("Gathered links:", gathered_links)
 
             # Add them to frontier
             Crawler.add_links_to_frontier(gathered_links)
@@ -76,13 +73,14 @@ class Crawler:
 
         # Parse HTML structure
         soup = BeautifulSoup(htmltext, "lxml")
+
         # Extract links to profiles from TWDS Authors
         authors = set()
         for link in soup.find_all("a"):
             value = link.get('href')
             joinedUrl = parse.urljoin(Crawler.base_url, value)
             # Links can be relative so join them with base_url
-            print("Relative url: " + value, "  Joined url: " + joinedUrl)
+            #print("Relative url: " + value, "  Joined url: " + joinedUrl)
             authors.add(joinedUrl)
 
         return authors
@@ -95,15 +93,12 @@ class Crawler:
             if link in Crawler.frontier or link in Crawler.crawled:
                 continue
             # Url should contain the domain gov.si
-            ## !! IMPORTANT !! Fix domain checking
+            ## FILTER URLS !!
             if Crawler.domain_name not in link:
                 continue
             Crawler.frontier.add(link)
 
     @staticmethod
     def update_files():
-        set_to_file(Crawler.frontier, 'frontier.txt')
-        set_to_file(Crawler.crawled, 'crawled.txt')
-
-# Begin crawler program #
-crw = Crawler(SEED_URLS, 'gov.si')
+        hf.set_to_file(Crawler.frontier, 'frontier.txt')
+        hf.set_to_file(Crawler.crawled, 'crawled.txt')
