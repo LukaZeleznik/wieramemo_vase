@@ -3,8 +3,9 @@ import psycopg2
 import time
 import random
 
+time_accessed = {'http://gov.si': 0, 'http://evem.gov.si': 0, 'http://e-uprava.gov.si': 0, 'http://e-prostor.gov.si': 0}
+
 def wait5sDelay(domain_name):
-    global time_accessed
     if domain_name not in time_accessed:
         time_accessed[domain_name] = 0
     
@@ -13,7 +14,8 @@ def wait5sDelay(domain_name):
     if (current_time > time_accessed[domain_name] + 5):
         time_accessed[domain_name] = current_time
     else:
-        random_wait = random.randint(1, 5) 
+        random_wait = random.randint(1, 5)
+        time.sleep(random_wait)
         return wait5sDelay(random_wait)
 
     
