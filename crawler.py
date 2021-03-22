@@ -5,12 +5,15 @@ from bs4 import BeautifulSoup
 from urllib import parse
 import urllib.request, urllib.robotparser
 import helper_functions as hf
+import selenium
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
 TIMEOUT = 5
 
-class Crawler:
+from threading import Thread
+
+class Crawler(Thread):
 
     # Declared Class variables (shared among multiple spiders)
     base_url = ''
@@ -20,11 +23,24 @@ class Crawler:
     frontier = set()
     crawled = set()
 
-    def __init__(self, seedURLs, domain_name):
-        Crawler.base_url = seedURLs[0] # Base_url just gov.si for now
-        Crawler.domain_name = domain_name # Domain name so we don't crawl the whole internet
-        self.setup_crawler()
-        self.crawl_page('Spider numero uno', Crawler.base_url)
+    def __init__(self):
+        # Crawler.base_url = seedURLs[0] # Base_url just gov.si for now
+        # Crawler.domain_name = domain_name # Domain name so we don't crawl the whole internet
+        # self.setup_crawler()
+        # self.crawl_page('Spider numero uno', Crawler.base_url)
+
+        Thread.__init__(self)
+        self.daemon = True
+        self.running = True
+
+
+    def stop(self):
+        self.running = False
+
+    def run(self):
+        while self.running:
+            #here the thread is running
+            pass
 
     # Take the seed urls and insert them into the frontier. (just the first one... for now)
     @staticmethod
@@ -39,6 +55,9 @@ class Crawler:
     def crawl_page(thread, page_url):
         # For now crawl only gov.si
         # Check if url has already been crawled
+
+        # check if enough time has elapsed from the last request
+
         if page_url not in Crawler.crawled:
             print(str(thread) + " now crawling: " + page_url)
             print('Frontier ' + str(len(Crawler.frontier)) + ' | Crawled  ' + str(len(Crawler.crawled)))
