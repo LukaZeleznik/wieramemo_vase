@@ -3,6 +3,7 @@ from queue import Queue
 from crawler import Crawler
 from domain import *
 import helper_functions as hf
+import time
 
 USER_AGENT = 'fri-wier-wieramemo-vase'
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
@@ -19,6 +20,8 @@ def create_workers():
         current_crawler = Crawler()
         current_crawler.start()
         crawler_threads.append(current_crawler)
+    while True:
+        time.sleep(1)
 
 
 create_workers()

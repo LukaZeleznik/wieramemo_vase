@@ -40,6 +40,7 @@ class Crawler(Thread):
     def run(self):
         while self.running:
             print("thread", currentThread().ident)
+            time.sleep(1)
 
 
     # Take the seed urls and insert them into the frontier. (just the first one... for now)
