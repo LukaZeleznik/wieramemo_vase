@@ -22,8 +22,9 @@ class Crawler(Thread):
     crawled_file = ''
     frontier = set()
     crawled = set()
+    time_accessed = {}
 
-    def __init__(self):
+    def __init__(self, time_accessed, lock):
         # Crawler.base_url = seedURLs[0] # Base_url just gov.si for now
         # Crawler.domain_name = domain_name # Domain name so we don't crawl the whole internet
         # self.setup_crawler()
@@ -32,6 +33,8 @@ class Crawler(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.running = True
+        self.time_accessed = time_accessed
+        self.lock = lock
 
 
     def stop(self):
@@ -39,7 +42,8 @@ class Crawler(Thread):
 
     def run(self):
         while self.running:
-            print("thread", currentThread().ident)
+            print("in")
+            self.crawl_page("http://gov.si", "http://gov.si", self.time_accessed)
             time.sleep(1)
 
 
@@ -52,37 +56,35 @@ class Crawler(Thread):
         Crawler.crawled = hf.file_to_set('crawled.txt')
 
     # Start crawling pages
-    @staticmethod
-    def crawl_page(thread, page_url, domain_name):
+    def crawl_page(self, page_url, domain_name, time_accessed):
         # For now crawl only gov.si
         # Check if url has already been crawled
 
         # check if enough time has elapsed from the last request
 
-        if page_url not in Crawler.crawled:
-            print(str(thread) + " now crawling: " + page_url)
-            print('Frontier ' + str(len(Crawler.frontier)) + ' | Crawled  ' + str(len(Crawler.crawled)))
+        #if page_url not in Crawler.crawled:
+        print(str("thread") + " now crawling: " + page_url)
+        #print('Frontier ' + str(len(Crawler.frontier)) + ' | Crawled  ' + str(len(Crawler.crawled)))
 
-            # Gather links
-            gathered_links = Crawler.gather_links(page_url, domain_name)
-            print("Gathered links:", gathered_links)
+        # Gather links
+        gathered_links = Crawler.gather_links(self, page_url, domain_name, time_accessed)
+        #print("Gathered links:", gathered_links)
 
-            # Add them to frontier
-            Crawler.add_links_to_frontier(gathered_links)
+        # Add them to frontier
+        #Crawler.add_links_to_frontier(gathered_links)
 
-            # Remove page from frontier to crawled set
-            Crawler.frontier.remove(page_url)
-            Crawler.crawled.add(page_url)
+        # Remove page from frontier to crawled set
+        #Crawler.frontier.remove(page_url)
+        #Crawler.crawled.add(page_url)
 
-            # Update txt files
-            Crawler.update_files()
+        # Update txt files
+        #Crawler.update_files()
 
     # Find a href attributes on html page
-    @staticmethod
-    def gather_links(page_url, domain_name):
+    def gather_links(self, page_url, domain_name, time_accessed):
         # Define Browser Options
 
-        hf.wait5sDelay(domain_name)
+        hf.wait5sDelay(domain_name, time_accessed, self.lock)
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window

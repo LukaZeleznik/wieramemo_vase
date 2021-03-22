@@ -3,21 +3,23 @@ import psycopg2
 import time
 import random
 
-time_accessed = {'http://gov.si': 0, 'http://evem.gov.si': 0, 'http://e-uprava.gov.si': 0, 'http://e-prostor.gov.si': 0}
 
-def wait5sDelay(domain_name):
+
+def wait5sDelay(domain_name, time_accessed, lock):
     if domain_name not in time_accessed:
-        time_accessed[domain_name] = 0
-    
-    current_time = int(time.time())
+        time_accessed[domain_name] = 0    
 
-    if (current_time > time_accessed[domain_name] + 5):
-        time_accessed[domain_name] = current_time
-    else:
+    while True:
+        current_time = int(time.time())
+        if (current_time > time_accessed[domain_name] + 5):
+            lock.acquire()
+            time_accessed[domain_name] = current_time
+            lock.release()
+            print("time_accessed: ", time_accessed)
+            print("time_accessed[domain_name]: ", time_accessed[domain_name])
+            return
         random_wait = random.randint(1, 5)
         time.sleep(random_wait)
-        return wait5sDelay(random_wait)
-
     
 
 def append_to_file(path, data):
