@@ -24,7 +24,7 @@ class Crawler:
         Crawler.base_url = seedURLs[0] # Base_url just gov.si for now
         Crawler.domain_name = domain_name # Domain name so we don't crawl the whole internet
         self.setup_crawler()
-        self.crawl_page('Spider numero uno', Crawler.base_url)
+        self.crawl_page('Spider numero uno', Crawler.base_url, Crawler.domain_name)
 
     # Take the seed urls and insert them into the frontier. (just the first one... for now)
     @staticmethod
@@ -36,7 +36,7 @@ class Crawler:
 
     # Start crawling pages
     @staticmethod
-    def crawl_page(thread, page_url):
+    def crawl_page(thread, page_url, domain_name):
         # For now crawl only gov.si
         # Check if url has already been crawled
         if page_url not in Crawler.crawled:
@@ -44,7 +44,7 @@ class Crawler:
             print('Frontier ' + str(len(Crawler.frontier)) + ' | Crawled  ' + str(len(Crawler.crawled)))
 
             # Gather links
-            gathered_links = Crawler.gather_links(page_url)
+            gathered_links = Crawler.gather_links(page_url, domain_name)
             print("Gathered links:", gathered_links)
 
             # Add them to frontier
@@ -59,8 +59,11 @@ class Crawler:
 
     # Find a href attributes on html page
     @staticmethod
-    def gather_links(page_url):
+    def gather_links(page_url, domain_name):
         # Define Browser Options
+
+        hf.wait5sDelay(domain_name)
+
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
         driver = webdriver.Chrome(options=chrome_options)

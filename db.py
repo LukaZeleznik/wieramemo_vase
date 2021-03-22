@@ -114,3 +114,5 @@ def get_links():
     cur.execute(query)
     wier = cur.fetchall()
     cur.close()
+
+    return wier

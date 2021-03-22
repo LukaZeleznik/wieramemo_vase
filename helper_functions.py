@@ -1,5 +1,22 @@
 import os
 import psycopg2
+import time
+import random
+
+def wait5sDelay(domain_name):
+    global time_accessed
+    if domain_name not in time_accessed:
+        time_accessed[domain_name] = 0
+    
+    current_time = int(time.time())
+
+    if (current_time > time_accessed[domain_name] + 5):
+        time_accessed[domain_name] = current_time
+    else:
+        random_wait = random.randint(1, 5) 
+        return wait5sDelay(random_wait)
+
+    
 
 def append_to_file(path, data):
     with open(path, 'a') as file:
@@ -39,4 +56,3 @@ def set_to_file(links, file):
         append_to_file(file, link)
 
 
-    return wier

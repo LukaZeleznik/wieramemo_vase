@@ -11,6 +11,8 @@ NUMBER_OF_THREADS = 8
 FRONTIER_FILE = 'frontier.txt'
 CRAWLED_FILE = 'crawled.txt'
 
+time_accessed = {'http://gov.si': 0, 'http://evem.gov.si': 0, 'http://e-uprava.gov.si': 0, 'http://e-prostor.gov.si': 0}
+
 queue = Queue()
 # Begin first crawler program #
 Crawler(SEED_URLS, 'gov.si')
