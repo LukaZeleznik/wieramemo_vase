@@ -11,7 +11,7 @@ SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'h
 USER_AGENT = 'fri-wier-wieramemo-vase'
 TIMEOUT = 5
 
-from threading import Thread
+from threading import Thread, currentThread
 
 class Crawler(Thread):
 
@@ -39,8 +39,8 @@ class Crawler(Thread):
 
     def run(self):
         while self.running:
-            #here the thread is running
-            pass
+            print("thread", currentThread().ident)
+
 
     # Take the seed urls and insert them into the frontier. (just the first one... for now)
     @staticmethod

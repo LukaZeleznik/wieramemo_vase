@@ -14,14 +14,11 @@ CRAWLED_FILE = 'crawled.txt'
 
 crawler_threads = []
 
-
-# Create worker thread (will die when main exists)
 def create_workers():
     for i in range(NUMBER_OF_THREADS):
         current_crawler = Crawler()
         current_crawler.start()
         crawler_threads.append(current_crawler)
 
+
 create_workers()
-
-
