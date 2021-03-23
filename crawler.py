@@ -101,12 +101,20 @@ class Crawler(Thread):
 
         # Extract links to profiles from TWDS Authors
         authors = set()
+        images = set()
         for link in soup.find_all("a"):
             value = link.get('href')
             joinedUrl = parse.urljoin(Crawler.base_url, value)
             # Links can be relative so join them with base_url
             #print("Relative url: " + value, "  Joined url: " + joinedUrl)
             authors.add(joinedUrl)
+        
+        for image in soup.find_all("img"):
+            value = image.get('src')
+            joinedUrl = parse.urljoin(Crawler.base_url, value)
+            images.add(joinedUrl)
+        
+        print(images)
 
         return authors
 
