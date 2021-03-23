@@ -36,7 +36,6 @@ class Crawler(Thread):
         self.time_accessed = time_accessed
         self.lock = lock
 
-
     def stop(self):
         self.running = False
 
@@ -45,15 +44,6 @@ class Crawler(Thread):
             print("in")
             self.crawl_page("http://gov.si", "http://gov.si", self.time_accessed)
             time.sleep(1)
-
-
-    # Take the seed urls and insert them into the frontier. (just the first one... for now)
-    @staticmethod
-    def setup_crawler():
-
-        hf.create_data_files(Crawler.base_url)
-        Crawler.frontier = hf.file_to_set('frontier.txt')
-        Crawler.crawled = hf.file_to_set('crawled.txt')
 
     # Start crawling pages
     def crawl_page(self, page_url, domain_name, time_accessed):
@@ -71,14 +61,14 @@ class Crawler(Thread):
         #print("Gathered links:", gathered_links)
 
         # Add them to frontier
-        #Crawler.add_links_to_frontier(gathered_links)
+        # Crawler.add_links_to_frontier(gathered_links)
 
         # Remove page from frontier to crawled set
-        #Crawler.frontier.remove(page_url)
-        #Crawler.crawled.add(page_url)
+        # Crawler.frontier.remove(page_url)
+        # Crawler.crawled.add(page_url)
 
         # Update txt files
-        #Crawler.update_files()
+        # Crawler.update_files()
 
     # Find a href attributes on html page
     def gather_links(self, page_url, domain_name, time_accessed):
@@ -109,21 +99,16 @@ class Crawler(Thread):
             authors.add(joinedUrl)
 
         return authors
-
-    @staticmethod
-    def add_links_to_frontier(links):
-        # Are they already in frontier?
-        # Are they already in the crawled list?
-        for link in links:
-            if link in Crawler.frontier or link in Crawler.crawled:
-                continue
-            # Url should contain the domain gov.si
-            ## FILTER URLS !!
-            if Crawler.domain_name not in link:
-                continue
-            Crawler.frontier.add(link)
-
-    @staticmethod
-    def update_files():
-        hf.set_to_file(Crawler.frontier, 'frontier.txt')
-        hf.set_to_file(Crawler.crawled, 'crawled.txt')
+    #
+    # @staticmethod
+    # def add_links_to_frontier(links):
+    #     # Are they already in frontier?
+    #     # Are they already in the crawled list?
+    #     for link in links:
+    #         if link in Crawler.frontier or link in Crawler.crawled:
+    #             continue
+    #         # Url should contain the domain gov.si
+    #         ## FILTER URLS !!
+    #         if Crawler.domain_name not in link:
+    #             continue
+    #         Crawler.frontier.add(link)
