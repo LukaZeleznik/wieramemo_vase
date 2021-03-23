@@ -5,6 +5,7 @@ from domain import *
 import helper_functions as hf
 import time
 import db_methods as db
+import urllib.request, urllib.robotparser, urllib.parse
 
 USER_AGENT = 'fri-wier-wieramemo-vase'
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
@@ -20,8 +21,12 @@ crawler_threads = []
 # inserting page and site rows for seed urls
 def insert_seed_urls_into_db():
     for seed_url in SEED_URLS:
-        current_site = db.insert_site(seed_url, "robotstext", "sitemaptext")
-        current_page = db.insert_page(current_site[0], PAGE_TYPE_CODES[2], seed_url + "/", "", "200", "040521")
+
+        current_url = urllib.parse.urlparse(seed_url).geturl()
+        current_netloc = urllib.parse.urlparse(seed_url).netloc
+
+        current_site = db.insert_site(current_netloc, "robotstext", "sitemaptext")
+        current_page = db.insert_page(current_site[0], PAGE_TYPE_CODES[2], current_url, "", "200", "040521")
 
 
 def create_workers():

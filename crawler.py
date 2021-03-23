@@ -189,48 +189,70 @@ class Crawler(Thread):
     def add_links_to_frontier(self):
         for link in self.links_to_crawl:
 
+
             current_link_url = link.geturl()
             current_link_domain = link.netloc
+
+            print("current link: ", current_link_url)
 
             self.lock.acquire()
             all_sites = db.get_all_sites()
             all_pages = db.get_all_pages()
-            self.lock.release()
-            # we need a list of already existing domain urls in db
-            # we need a list of already existing page urls in db
-
-            all_sites_urls = []
-            all_pages_urls = []
-
-            for site in all_sites:
-                all_sites_urls.append(urllib.parse.urlparse(site[1]))
-
-            for page in all_pages:
-                all_pages_urls.append(urllib.parse.urlparse(page[3]))
-
 
             # Only scrape sites in the gov.si domain
             ALLOWED_DOMAIN = ".gov.si"
             if ALLOWED_DOMAIN in current_link_domain:
-                pass
+
                 # Only add pages in the allowed domain
 
                 # check if the link exists in any of the pages in db
+                duplicate_found = False
+                for page in all_pages:
 
+                    current_page_url_obj = urllib.parse.urlparse(page[3])
+
+                    current_saved_page_url_string = current_page_url_obj.geturl()
+
+                    if current_saved_page_url_string == current_link_url:
+                        duplicate_found = True
+
+                        break
+                if duplicate_found:
+                    print("     duplicate found")
+                    self.lock.release()
+                    continue
 
 
                 # check if the domain of the link already exists in db
-                    # if it does, check if the full link already exists in
+                same_domain = False
 
+                for site in all_sites:
+                    current_site_url_obj = urllib.parse.urlparse(site[1])
+                    current_saved_site_url = current_site_url_obj.netloc
 
-            #
-            #
-            # domain = '{uri.scheme}://{uri.netloc}/'.format(uri=link)
-            # print("---------------------------->DOMAIN:", domain)
-            #
-            # if domain == self.site_currently_crawling[1]:
-            #     # we are on the same domain, so just add page on the same domain
-            # else:
-            #     # we are on a new domain, so create a new site, ad page to this new site
-            # pass
+                    print("-<<<<>>>>>>><<<<<<<<<<->>>>>>>>>>>>> ", current_saved_site_url, current_link_domain)
+                    if current_saved_site_url == current_link_domain:
+                        # if it does, create a new page in db with current url on this site
+
+                        site_id = site[0]
+                        # create page
+                        new_page = db.insert_page(site_id, PAGE_TYPE_CODES[2], current_link_url , "", "200", "040521")
+                        same_domain = True
+                        break
+
+                if same_domain == True:
+                    print("     same domain")
+                    self.lock.release()
+                else:
+                    # create new domain
+                    new_site = db.insert_site(current_link_domain, "robotstext", "sitemaptext")
+                    # create page at this domain
+                    new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "200", "040521")
+                    print("     new domain")
+                    self.lock.release()
+
+            else:
+                print("     domain not allowed")
+                self.lock.release()
+
 
