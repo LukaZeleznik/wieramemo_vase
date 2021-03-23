@@ -6,6 +6,7 @@ from urllib import parse
 import urllib.request, urllib.robotparser
 import helper_functions as hf
 import selenium
+import lxml
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
@@ -25,11 +26,6 @@ class Crawler(Thread):
     time_accessed = {}
 
     def __init__(self, time_accessed, lock):
-        # Crawler.base_url = seedURLs[0] # Base_url just gov.si for now
-        # Crawler.domain_name = domain_name # Domain name so we don't crawl the whole internet
-        # self.setup_crawler()
-        # self.crawl_page('Spider numero uno', Crawler.base_url, Crawler.domain_name)
-
         Thread.__init__(self)
         self.daemon = True
         self.running = True
@@ -42,6 +38,7 @@ class Crawler(Thread):
     def run(self):
         while self.running:
             print("in")
+
             self.crawl_page("http://gov.si", "http://gov.si", self.time_accessed)
             time.sleep(1)
 
@@ -57,7 +54,7 @@ class Crawler(Thread):
         #print('Frontier ' + str(len(Crawler.frontier)) + ' | Crawled  ' + str(len(Crawler.crawled)))
 
         # Gather links
-        gathered_links = Crawler.gather_links(self, page_url, domain_name, time_accessed)
+        gathered_links = self.gather_links(page_url, domain_name, time_accessed)
         #print("Gathered links:", gathered_links)
 
         # Add them to frontier
