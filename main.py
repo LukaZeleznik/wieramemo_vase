@@ -4,19 +4,24 @@ from crawler import Crawler
 from domain import *
 import helper_functions as hf
 import time
+import db_methods as db
 
 USER_AGENT = 'fri-wier-wieramemo-vase'
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
-DOMAIN_NAME = 'gov.si'
 NUMBER_OF_THREADS = 3
-FRONTIER_FILE = 'frontier.txt'
-CRAWLED_FILE = 'crawled.txt'
+PAGE_TYPE_CODES = ["HTML","DUPLICATE","FRONTIER","BINARY"]
+DATA_TYPES = ["DOC","DOCX","PDF","PPT","PPTX"]
 
 time_accessed = {'http://gov.si': 0, 'http://evem.gov.si': 0, 'http://e-uprava.gov.si': 0, 'http://e-prostor.gov.si': 0}
 
-
 crawler_threads = []
 
+
+# inserting page and site rows for seed urls
+def insert_seed_urls_into_db():
+    for seed_url in SEED_URLS:
+        current_site = db.insert_site(seed_url, "robotstext", "sitemaptext")
+        current_page = db.insert_page(current_site[0], PAGE_TYPE_CODES[2], seed_url + "/", "", "200", "040521")
 
 
 def create_workers():
@@ -25,8 +30,10 @@ def create_workers():
         current_crawler = Crawler(time_accessed, lock)
         current_crawler.start()
         crawler_threads.append(current_crawler)
-    while True:
-        time.sleep(1)
 
 
+insert_seed_urls_into_db()
 create_workers()
+
+while True:
+    time.sleep(1)

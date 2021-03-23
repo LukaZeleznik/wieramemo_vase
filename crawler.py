@@ -3,135 +3,158 @@ from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 from urllib import parse
-import urllib.request, urllib.robotparser
+import urllib.request, urllib.robotparser, urllib.parse
 import helper_functions as hf
 import selenium
+import lxml
+from threading import Thread
+import threading
+import db_methods as db
+import random
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
 TIMEOUT = 5
-
-from threading import Thread, currentThread
+PAGE_TYPE_CODES = ["HTML","DUPLICATE","FRONTIER","BINARY"]
+DATA_TYPES = ["DOC","DOCX","PDF","PPT","PPTX"]
 
 class Crawler(Thread):
 
-    # Declared Class variables (shared among multiple spiders)
-    base_url = ''
-    domain_name = ''
-    frontier_file = ''
-    crawled_file = ''
-    frontier = set()
-    crawled = set()
-    time_accessed = {}
-
     def __init__(self, time_accessed, lock):
-        # Crawler.base_url = seedURLs[0] # Base_url just gov.si for now
-        # Crawler.domain_name = domain_name # Domain name so we don't crawl the whole internet
-        # self.setup_crawler()
-        # self.crawl_page('Spider numero uno', Crawler.base_url, Crawler.domain_name)
-
         Thread.__init__(self)
         self.daemon = True
         self.running = True
         self.time_accessed = time_accessed
         self.lock = lock
+        self.time_between_calls = 5
 
+        self.page_currently_crawling = None
+        self.site_currently_crawling = None
+        self.current_page_html = None
+        self.links_to_crawl = []
 
     def stop(self):
         self.running = False
 
     def run(self):
         while self.running:
-            print("in")
-            self.crawl_page("http://gov.si", "http://gov.si", self.time_accessed)
-            time.sleep(1)
+
+            # clear values from possible previous iterations
+            self.page_currently_crawling = None
+            self.site_currently_crawling = None
+            self.current_page_html = None
+            self.links_to_crawl = []
+
+            # retrieve a page that is suitable for crawling
+            page_to_crawl, page_to_crawl_site = self.get_page_to_crawl()
+            self.page_currently_crawling = page_to_crawl
+            self.site_currently_crawling = page_to_crawl_site
+
+            # check if there is a page available to crawl
+            if self.page_currently_crawling is not None and self.site_currently_crawling is not None:
+
+                print("page to crawl found:", page_to_crawl)
+
+                self.current_page_html = self.crawl_page()
+
+                if self.current_page_html is not None:
+                    # the page has not yet been crawled, so crawl it
+                    print("------------------------------------> gathering links on page: ", self.page_currently_crawling[3])
+                    self.links_to_crawl = self.gather_links()
+
+                    if len(self.links_to_crawl) > 0:
+                        # if any links are found, add them to the frontier
+                        self.add_links_to_frontier()
+
+                else:
+                    # the page has already been crawled, need to mark it as duplicate
+                    pass
+
+            # time.sleep(1)
+
+    def get_page_to_crawl(self):
+        while True:
+            # acquire lock
+            self.lock.acquire()
+
+            # get all pages
+            all_pages = db.get_all_pages()
+
+            # find first page that has the tag frontier
+            page_to_crawl = None
+            for page in all_pages:
+                if page[2] == "FRONTIER":
+                    page_to_crawl = page
+                    break
+            if page_to_crawl is None:
+                print("---------------------->", threading.get_ident(), "There are no pages available to crawl!")
+                self.lock.release()
+                self.stop()
+                return None, None
+
+            # get site url for the first page that has the tag frontier
+            page_to_crawl_site = db.get_site_by_id(page[1])
+
+            # check if the domain can be accessed at current time
+            if hf.can_domain_be_accessed_at_current_time(page_to_crawl_site[1], self.time_accessed, self.time_between_calls):
+                # if yes, return page and domain, and mark the page as visited (just change the tag to HTML)
+                updated_page = db.update_page_by_id(page_to_crawl[0], page_to_crawl[1], PAGE_TYPE_CODES[0],
+                                                    page_to_crawl[3], page_to_crawl[4], page_to_crawl[5], page_to_crawl[6])
+                page_to_crawl = updated_page
+                self.lock.release()
+                return page_to_crawl, page_to_crawl_site
+
+            else:
+                # if no, then wait for a random time
+                self.lock.release()
+                random_wait = random.uniform(0, self.time_between_calls)
+                time.sleep(random_wait)
 
 
-    # Take the seed urls and insert them into the frontier. (just the first one... for now)
-    @staticmethod
-    def setup_crawler():
+    # visit a page and return its content html
+    def crawl_page(self):
 
-        hf.create_data_files(Crawler.base_url)
-        Crawler.frontier = hf.file_to_set('frontier.txt')
-        Crawler.crawled = hf.file_to_set('crawled.txt')
-
-    # Start crawling pages
-    def crawl_page(self, page_url, domain_name, time_accessed):
-        # For now crawl only gov.si
         # Check if url has already been crawled
 
-        # check if enough time has elapsed from the last request
-
-        #if page_url not in Crawler.crawled:
-        print(str("thread") + " now crawling: " + page_url)
-        #print('Frontier ' + str(len(Crawler.frontier)) + ' | Crawled  ' + str(len(Crawler.crawled)))
-
-        # Gather links
-        gathered_links = Crawler.gather_links(self, page_url, domain_name, time_accessed)
-        #print("Gathered links:", gathered_links)
-
-        # Add them to frontier
-        #Crawler.add_links_to_frontier(gathered_links)
-
-        # Remove page from frontier to crawled set
-        #Crawler.frontier.remove(page_url)
-        #Crawler.crawled.add(page_url)
-
-        # Update txt files
-        #Crawler.update_files()
-
-    # Find a href attributes on html page
-    def gather_links(self, page_url, domain_name, time_accessed):
-        # Define Browser Options
-
-        hf.wait5sDelay(domain_name, time_accessed, self.lock)
+        page_to_crawl_url = self.page_currently_crawling[3]
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
         driver = webdriver.Chrome(options=chrome_options)
-        driver.get(page_url)
+        driver.get(page_to_crawl_url)
 
         # Not sure what timeout does
         time.sleep(TIMEOUT)
-        htmltext = driver.page_source
+        html_text = driver.page_source
         driver.quit()
 
-        # Parse HTML structure
-        soup = BeautifulSoup(htmltext, "lxml")
+        return html_text
+
+
+    # Find a href attributes on html page
+    def gather_links(self):
+        # Define Browser Options
+
+        soup = BeautifulSoup(self.current_page_html, "lxml")
 
         # Extract links to profiles from TWDS Authors
-        authors = set()
+        links = set()
         images = set()
         for link in soup.find_all("a"):
-            value = link.get('href')
-            joinedUrl = parse.urljoin(Crawler.base_url, value)
-            # Links can be relative so join them with base_url
-            #print("Relative url: " + value, "  Joined url: " + joinedUrl)
-            authors.add(joinedUrl)
-        
+            current_url = link.get('href')
+            links.add(current_url)
+
         for image in soup.find_all("img"):
             value = image.get('src')
-            joinedUrl = parse.urljoin(Crawler.base_url, value)
-            images.add(joinedUrl)
+            joined_url = parse.urljoin(Crawler.base_url, value)
+            images.add(joined_url)
         
         print(images)
 
-        return authors
+        return list(links)
 
-    @staticmethod
-    def add_links_to_frontier(links):
-        # Are they already in frontier?
-        # Are they already in the crawled list?
-        for link in links:
-            if link in Crawler.frontier or link in Crawler.crawled:
-                continue
-            # Url should contain the domain gov.si
-            ## FILTER URLS !!
-            if Crawler.domain_name not in link:
-                continue
-            Crawler.frontier.add(link)
 
-    @staticmethod
-    def update_files():
-        hf.set_to_file(Crawler.frontier, 'frontier.txt')
-        hf.set_to_file(Crawler.crawled, 'crawled.txt')
+    def add_links_to_frontier(self):
+        for link in self.links_to_crawl:
+            print(link)
+
