@@ -11,6 +11,7 @@ from threading import Thread
 import threading
 import db_methods as db
 import random
+import requests
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
@@ -56,6 +57,10 @@ class Crawler(Thread):
                 print("page to crawl found:", page_to_crawl)
 
                 self.current_page_html = self.crawl_page()
+
+                if self.current_page_html == "BINARY":
+                    #TODO: save page as binary
+                    pass
 
                 if self.current_page_html is not None:
                     # the page has not yet been crawled, so crawl it
@@ -115,8 +120,25 @@ class Crawler(Thread):
     def crawl_page(self):
 
         # Check if url has already been crawled
-
         page_to_crawl_url = self.page_currently_crawling[3]
+
+        req = requests.get(page_to_crawl_url)
+
+        if(req.headers['content-type'] == "application/pdf"):
+            print("PDF")
+            return "BINARY"
+        elif(req.headers['content-type'] == "application/msword"):
+            print("DOC")
+            return "BINARY"
+        elif(req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
+            print("DOCX")
+            return "BINARY"
+        elif(req.headers['content-type'] == "application/vnd.ms-powerpoint"):
+            print("PPT")
+            return "BINARY"
+        elif(req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.presentationml.presentation"):
+            print("PPTX")
+            return "BINARY"
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
@@ -146,8 +168,7 @@ class Crawler(Thread):
 
         for image in soup.find_all("img"):
             value = image.get('src')
-            joined_url = parse.urljoin(Crawler.base_url, value)
-            images.add(joined_url)
+            images.add(value)
         
         print(images)
 
