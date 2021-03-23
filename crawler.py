@@ -115,7 +115,6 @@ class Crawler(Thread):
                 random_wait = random.uniform(0, self.time_between_calls)
                 time.sleep(random_wait)
 
-
     # visit a page and return its content html
     def crawl_page(self):
 
@@ -196,7 +195,7 @@ class Crawler(Thread):
             self.lock.acquire()
             all_sites = db.get_all_sites()
             all_pages = db.get_all_pages()
-
+            self.lock.release()
             # we need a list of already existing domain urls in db
             # we need a list of already existing page urls in db
 
@@ -218,7 +217,7 @@ class Crawler(Thread):
 
                 # check if the link exists in any of the pages in db
 
-     
+
 
                 # check if the domain of the link already exists in db
                     # if it does, check if the full link already exists in
