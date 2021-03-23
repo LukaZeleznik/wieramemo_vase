@@ -121,7 +121,10 @@ class Crawler(Thread):
         # Check if url has already been crawled
         page_to_crawl_url = self.page_currently_crawling[3]
 
-        req = requests.get(page_to_crawl_url)
+        try:
+            req = requests.get(page_to_crawl_url)
+        except requests.exceptions.ConnectionError:
+            return
 
         if(req.headers['content-type'] == "application/pdf"):
             print("PDF")
@@ -141,6 +144,7 @@ class Crawler(Thread):
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
+        chrome_options.add_argument(USER_AGENT)
         driver = webdriver.Chrome(options=chrome_options)
         driver.get(page_to_crawl_url)
 
@@ -228,7 +232,12 @@ class Crawler(Thread):
 
                 for site in all_sites:
                     current_site_url_obj = urllib.parse.urlparse(site[1])
-                    current_saved_site_url = current_site_url_obj.netloc
+                    current_saved_site_url = "http://" + current_site_url_obj.netloc
+
+                    print("site[1]", site[1])
+
+                    current_saved_site_url = site[1].replace("www.", "")
+                    current_link_domain = current_link_domain.replace("www.", "")
 
                     print("-<<<<>>>>>>><<<<<<<<<<->>>>>>>>>>>>> ", current_saved_site_url, current_link_domain)
                     if current_saved_site_url == current_link_domain:
@@ -245,6 +254,7 @@ class Crawler(Thread):
                     self.lock.release()
                 else:
                     # create new domain
+                    current_link_domain = current_link_domain.replace("www.", "")
                     new_site = db.insert_site(current_link_domain, "robotstext", "sitemaptext")
                     # create page at this domain
                     new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "200", "040521")

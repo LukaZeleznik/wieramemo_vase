@@ -1,5 +1,6 @@
-import requests
-req = requests.get('https://zavezanec.zzzs.si/wps/wcm/connect/a40b6286-b84c-432c-ac26-efaeab79d447/Navodila+za+uporabo+M+obrazcev+v+PDF+obliki_i.pdf?MOD=AJPERES&CVID=meHGICR&ContentCache=NONE&CACHE=NONE')
+import urllib
+site = "http://www.spot.gov.si/"
+current_site_url_obj = urllib.parse.urlparse(site)
+current_saved_site_url = current_site_url_obj.netloc
 
-print(req.headers['content-type'])
-
+print(current_saved_site_url)
