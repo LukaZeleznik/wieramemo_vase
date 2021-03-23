@@ -142,6 +142,21 @@ def get_all_pages():
 
     return all_entries
 
+def update_page_by_id(id, site_id, page_type_code, url, html_content, http_status_code, accessed_time):
+    conn = psycopg2.connect(CONN_DATA)
+    cur = conn.cursor()
+
+    query = "UPDATE crawldb.page SET site_id = %s, page_type_code = %s, url = %s, html_content = %s, http_status_code = %s, accessed_time = %s WHERE id = %s RETURNING *"
+    data_to_insert = (site_id, page_type_code, url, html_content, http_status_code, accessed_time, id)
+    cur.execute(query, data_to_insert)
+    conn.commit()
+
+    updated_entry = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return updated_entry
 
 def delete_page_by_id(id):
     conn = psycopg2.connect(CONN_DATA)

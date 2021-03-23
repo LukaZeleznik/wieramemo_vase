@@ -4,6 +4,22 @@ import time
 import random
 
 
+def can_domain_be_accessed_at_current_time(domain_url, time_accessed, time_between_calls):
+    current_time = int(time.time())
+
+    # if domain url has not yet been accessed, we can access it right away
+    if domain_url not in time_accessed:
+        time_accessed[domain_url] = current_time
+        return True
+
+    # else, we have to check if the appropriate amount of time has passed
+    if current_time >= time_accessed[domain_url] + time_between_calls:
+        # if enough time has passed, we can acces the domain
+        time_accessed[domain_url] = current_time
+        return True
+
+    # if not enough time has passed, we cannot
+    return False
 
 def wait5sDelay(domain_name, time_accessed, lock):
     if domain_name not in time_accessed:
@@ -15,8 +31,8 @@ def wait5sDelay(domain_name, time_accessed, lock):
             lock.acquire()
             time_accessed[domain_name] = current_time
             lock.release()
-            print("time_accessed: ", time_accessed)
-            print("time_accessed[domain_name]: ", time_accessed[domain_name])
+            # print("time_accessed: ", time_accessed)
+            # print("time_accessed[domain_name]: ", time_accessed[domain_name])
             return
         random_wait = random.randint(1, 5)
         time.sleep(random_wait)
