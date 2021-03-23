@@ -163,12 +163,24 @@ class Crawler(Thread):
         links = set()
         images = set()
         for link in soup.find_all("a"):
-            current_url = link.get('href')
-            links.add(current_url)
+
+            current_url_relative = link.get('href')
+
+            current_url = urllib.parse.urljoin(self.site_currently_crawling[1], current_url_relative)
+
+            current_parsed_url = urllib.parse.urlparse(current_url)
+
+            links.add(current_parsed_url)
 
         for image in soup.find_all("img"):
-            value = image.get('src')
-            images.add(value)
+
+            current_url_relative = image.get('src')
+
+            current_url = urllib.parse.urljoin(self.site_currently_crawling[1], current_url_relative)
+
+            current_parsed_url = urllib.parse.urlparse(current_url)
+
+            images.add(current_parsed_url)
         
         print(images)
 
@@ -177,5 +189,49 @@ class Crawler(Thread):
 
     def add_links_to_frontier(self):
         for link in self.links_to_crawl:
-            print(link)
+
+            current_link_url = link.geturl()
+            current_link_domain = link.netloc
+
+            self.lock.acquire()
+            all_sites = db.get_all_sites()
+            all_pages = db.get_all_pages()
+
+            # we need a list of already existing domain urls in db
+            # we need a list of already existing page urls in db
+
+            all_sites_urls = []
+            all_pages_urls = []
+
+            for site in all_sites:
+                all_sites_urls.append(urllib.parse.urlparse(site[1]))
+
+            for page in all_pages:
+                all_pages_urls.append(urllib.parse.urlparse(page[3]))
+
+
+            # Only scrape sites in the gov.si domain
+            ALLOWED_DOMAIN = ".gov.si"
+            if ALLOWED_DOMAIN in current_link_domain:
+                pass
+                # Only add pages in the allowed domain
+
+                # check if the link exists in any of the pages in db
+
+     
+
+                # check if the domain of the link already exists in db
+                    # if it does, check if the full link already exists in
+
+
+            #
+            #
+            # domain = '{uri.scheme}://{uri.netloc}/'.format(uri=link)
+            # print("---------------------------->DOMAIN:", domain)
+            #
+            # if domain == self.site_currently_crawling[1]:
+            #     # we are on the same domain, so just add page on the same domain
+            # else:
+            #     # we are on a new domain, so create a new site, ad page to this new site
+            # pass
 
