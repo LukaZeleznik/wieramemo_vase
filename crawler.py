@@ -7,7 +7,8 @@ import urllib.request, urllib.robotparser, urllib.parse
 import helper_functions as hf
 import selenium
 import lxml
-from threading import Thread, currentThread
+from threading import Thread
+import threading
 import db_methods as db
 import random
 
@@ -58,6 +59,7 @@ class Crawler(Thread):
 
                 if self.current_page_html is not None:
                     # the page has not yet been crawled, so crawl it
+                    print("------------------------------------> gathering links on page: ", self.page_currently_crawling[3])
                     self.links_to_crawl = self.gather_links()
 
                     if len(self.links_to_crawl) > 0:
@@ -85,7 +87,7 @@ class Crawler(Thread):
                     page_to_crawl = page
                     break
             if page_to_crawl is None:
-                print("There are no pages available to crawl!")
+                print("---------------------->", threading.get_ident(), "There are no pages available to crawl!")
                 self.lock.release()
                 self.stop()
                 return None, None
