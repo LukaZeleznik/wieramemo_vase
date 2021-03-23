@@ -3,7 +3,7 @@ from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 from urllib import parse
-import urllib.request, urllib.robotparser
+import urllib.request, urllib.robotparser, urllib.parse
 import helper_functions as hf
 import selenium
 import lxml
@@ -109,7 +109,7 @@ class Crawler(Thread):
                 time.sleep(random_wait)
 
 
-    # Start crawling pages
+    # visit a page and return its content html
     def crawl_page(self):
 
         # Check if url has already been crawled
@@ -146,5 +146,6 @@ class Crawler(Thread):
 
 
     def add_links_to_frontier(self):
-        pass
+        for link in self.links_to_crawl:
+            print(link)
 
