@@ -1,3 +1,4 @@
+from requests.models import MissingSchema
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import time
@@ -12,6 +13,7 @@ import threading
 import db_methods as db
 import random
 import requests
+import os.path
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
@@ -50,6 +52,7 @@ class Crawler(Thread):
             page_to_crawl, page_to_crawl_site = self.get_page_to_crawl()
             self.page_currently_crawling = page_to_crawl
             self.site_currently_crawling = page_to_crawl_site
+            self.page_currently_crawling_id = page_to_crawl[0]
 
             # check if there is a page available to crawl
             if self.page_currently_crawling is not None and self.site_currently_crawling is not None:
@@ -123,7 +126,7 @@ class Crawler(Thread):
 
         try:
             req = requests.get(page_to_crawl_url)
-        except requests.exceptions.ConnectionError:
+        except Exception:
             return
 
         if(req.headers['content-type'] == "application/pdf"):
@@ -185,7 +188,25 @@ class Crawler(Thread):
 
             images.add(current_parsed_url)
         
-        print(images)
+        #print(images)
+
+        for image in images:
+            fullurl = urllib.parse.urljoin(self.site_currently_crawling[1], image.geturl())
+            fullurl = urllib.parse.urlparse(fullurl)
+
+            try:
+                res = requests.get(fullurl.geturl())
+            except Exception:
+                continue
+            
+            content_type = res.headers['content-type']
+            content = res.content
+            url = image.geturl()
+            path = urllib.parse.urlparse(url).path
+            filename = os.path.basename(path)
+
+            db.insert_image(self.page_currently_crawling_id, filename, content_type, content, int(time.time()))
+            
 
         return list(links)
 

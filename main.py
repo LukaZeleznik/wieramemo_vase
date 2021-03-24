@@ -6,6 +6,7 @@ import helper_functions as hf
 import time
 import db_methods as db
 import urllib.request, urllib.robotparser, urllib.parse
+import run_this_if_you_want_to_clear_db
 
 USER_AGENT = 'fri-wier-wieramemo-vase'
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']

@@ -1,6 +1,4 @@
-import urllib
-site = "http://www.spot.gov.si/"
-current_site_url_obj = urllib.parse.urlparse(site)
-current_saved_site_url = current_site_url_obj.netloc
+import requests
+req = requests.get("https://i.stack.imgur.com/1dpmw.gif")
 
-print(current_saved_site_url)
+print(req.content)

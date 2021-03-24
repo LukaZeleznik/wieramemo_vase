@@ -196,7 +196,7 @@ def insert_image(page_id, filename, content_type, data, accessed_time):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "INSERT INTO crawldb.image(page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, %s) RETURNING *"
+    query = "INSERT INTO crawldb.image(page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, to_timestamp(%s)) RETURNING *"
     data_to_insert = (page_id, filename, content_type, data, accessed_time)
     cur.execute(query, data_to_insert)
     conn.commit()
