@@ -31,7 +31,7 @@ def get_site_by_id(id):
     cur = conn.cursor()
 
     query = "SELECT * FROM crawldb.site WHERE id = %s"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -64,7 +64,7 @@ def delete_site_by_id(id):
     cur = conn.cursor()
 
     query = "DELETE FROM crawldb.site WHERE id = %s RETURNING *"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -93,12 +93,12 @@ def delete_all_sites():
 
 
 # ----------> PAGE METHODS <---------- #
-def insert_page(site_id, page_type_code, url, html_content, http_status_code, accessed_time):
+def insert_page(site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "INSERT INTO crawldb.page(site_id, page_type_code, url, html_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s) RETURNING *"
-    data_to_insert = (site_id, page_type_code, url, html_content, http_status_code, accessed_time)
+    query = "INSERT INTO crawldb.page(site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING *"
+    data_to_insert = (site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -115,7 +115,7 @@ def get_page_by_id(id):
     cur = conn.cursor()
 
     query = "SELECT * FROM crawldb.page WHERE id = %s"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -142,12 +142,13 @@ def get_all_pages():
 
     return all_entries
 
-def update_page_by_id(id, site_id, page_type_code, url, html_content, http_status_code, accessed_time):
+
+def update_page_by_id(id, site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "UPDATE crawldb.page SET site_id = %s, page_type_code = %s, url = %s, html_content = %s, http_status_code = %s, accessed_time = %s WHERE id = %s RETURNING *"
-    data_to_insert = (site_id, page_type_code, url, html_content, http_status_code, accessed_time, id)
+    query = "UPDATE crawldb.page SET site_id = %s, page_type_code = %s, url = %s, html_content = %s, hash_content = %s, http_status_code = %s, accessed_time = %s WHERE id = %s RETURNING *"
+    data_to_insert = (site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time, id)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -158,12 +159,13 @@ def update_page_by_id(id, site_id, page_type_code, url, html_content, http_statu
 
     return updated_entry
 
+
 def delete_page_by_id(id):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
     query = "DELETE FROM crawldb.page WHERE id = %s RETURNING *"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -214,7 +216,7 @@ def get_image_by_id(id):
     cur = conn.cursor()
 
     query = "SELECT * FROM crawldb.image WHERE id = %s"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -247,7 +249,7 @@ def delete_image_by_id(id):
     cur = conn.cursor()
 
     query = "DELETE FROM crawldb.image WHERE id = %s RETURNING *"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -298,7 +300,7 @@ def get_page_data_by_id(id):
     cur = conn.cursor()
 
     query = "SELECT * FROM crawldb.page_data WHERE id = %s"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -331,7 +333,7 @@ def delete_page_data_by_id(id):
     cur = conn.cursor()
 
     query = "DELETE FROM crawldb.page_data WHERE id = %s RETURNING *"
-    data_to_insert = (id, )
+    data_to_insert = (id,)
     cur.execute(query, data_to_insert)
     conn.commit()
 
@@ -407,3 +409,20 @@ def delete_all_links():
     conn.close()
 
     return all_deleted_entries
+
+# ----------> DUPLICATE FINDER METHODS <---------- #
+def find_page_duplicate(hash_content):
+    conn = psycopg2.connect(CONN_DATA)
+    cur = conn.cursor()
+
+    query = "SELECT * FROM crawldb.page WHERE hash_content = %s"
+    data_to_insert = (hash_content,)
+    cur.execute(query, data_to_insert)
+    conn.commit()
+
+    page = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return page is not None

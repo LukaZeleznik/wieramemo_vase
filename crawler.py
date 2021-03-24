@@ -14,12 +14,16 @@ import db_methods as db
 import random
 import requests
 import os.path
+from hash_tool import HashTool
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
 TIMEOUT = 5
 PAGE_TYPE_CODES = ["HTML","DUPLICATE","FRONTIER","BINARY"]
 DATA_TYPES = ["DOC","DOCX","PDF","PPT","PPTX"]
+
+# Create a global hash tool for page signatures
+hash_tool = HashTool()
 
 class Crawler(Thread):
 
@@ -57,7 +61,7 @@ class Crawler(Thread):
             # check if there is a page available to crawl
             if self.page_currently_crawling is not None and self.site_currently_crawling is not None:
 
-                print("page to crawl found:", page_to_crawl)
+                #print("page to crawl found:", page_to_crawl)
 
                 self.current_page_html = self.crawl_page()
 
@@ -67,7 +71,16 @@ class Crawler(Thread):
 
                 if self.current_page_html is not None:
                     # the page has not yet been crawled, so crawl it
-                    print("------------------------------------> gathering links on page: ", self.page_currently_crawling[3])
+                    print("--------------------> self.page_currently_crawling: ", self.page_currently_crawling[3])
+
+                    # If page hash for this page is equal to some other page - update to DUPLICATE
+                    if self.handle_duplicate_page():
+                        self.update_page_hash()
+                        # Do not save html_content since this page is a duplicate
+                        pass
+                    else:
+                        self.update_page_hash()
+
                     self.links_to_crawl = self.gather_links()
 
                     if len(self.links_to_crawl) > 0:
@@ -107,7 +120,7 @@ class Crawler(Thread):
             if hf.can_domain_be_accessed_at_current_time(page_to_crawl_site[1], self.time_accessed, self.time_between_calls):
                 # if yes, return page and domain, and mark the page as visited (just change the tag to HTML)
                 updated_page = db.update_page_by_id(page_to_crawl[0], page_to_crawl[1], PAGE_TYPE_CODES[0],
-                                                    page_to_crawl[3], page_to_crawl[4], page_to_crawl[5], page_to_crawl[6])
+                                                    page_to_crawl[3], page_to_crawl[4], page_to_crawl[5], page_to_crawl[6], page_to_crawl[7])
                 page_to_crawl = updated_page
                 self.lock.release()
                 return page_to_crawl, page_to_crawl_site
@@ -198,7 +211,7 @@ class Crawler(Thread):
                 res = requests.get(fullurl.geturl())
             except Exception:
                 continue
-            
+
             content_type = res.headers['content-type']
             content = res.content
             url = image.geturl()
@@ -206,7 +219,7 @@ class Crawler(Thread):
             filename = os.path.basename(path)
 
             db.insert_image(self.page_currently_crawling_id, filename, content_type, content, int(time.time()))
-            
+
 
         return list(links)
 
@@ -218,7 +231,7 @@ class Crawler(Thread):
             current_link_url = link.geturl()
             current_link_domain = link.netloc
 
-            print("current link: ", current_link_url)
+            #print("current link: ", current_link_url)
 
             self.lock.acquire()
             all_sites = db.get_all_sites()
@@ -243,7 +256,7 @@ class Crawler(Thread):
 
                         break
                 if duplicate_found:
-                    print("     duplicate found")
+                    #print("     duplicate found")
                     self.lock.release()
                     continue
 
@@ -255,35 +268,70 @@ class Crawler(Thread):
                     current_site_url_obj = urllib.parse.urlparse(site[1])
                     current_saved_site_url = "http://" + current_site_url_obj.netloc
 
-                    print("site[1]", site[1])
+                    #print("site[1]", site[1])
 
                     current_saved_site_url = site[1].replace("www.", "")
                     current_link_domain = current_link_domain.replace("www.", "")
 
-                    print("-<<<<>>>>>>><<<<<<<<<<->>>>>>>>>>>>> ", current_saved_site_url, current_link_domain)
+                    #print("-<<<<>>>>>>><<<<<<<<<<->>>>>>>>>>>>> ", current_saved_site_url, current_link_domain)
                     if current_saved_site_url == current_link_domain:
                         # if it does, create a new page in db with current url on this site
 
                         site_id = site[0]
                         # create page
-                        new_page = db.insert_page(site_id, PAGE_TYPE_CODES[2], current_link_url , "", "200", "040521")
+                        new_page = db.insert_page(site_id, PAGE_TYPE_CODES[2], current_link_url , "", "", "200", "040521")
                         same_domain = True
                         break
 
                 if same_domain == True:
-                    print("     same domain")
+                    #print("     same domain")
                     self.lock.release()
                 else:
                     # create new domain
                     current_link_domain = current_link_domain.replace("www.", "")
                     new_site = db.insert_site(current_link_domain, "robotstext", "sitemaptext")
                     # create page at this domain
-                    new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "200", "040521")
-                    print("     new domain")
+                    new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
+                    #print("     new domain")
                     self.lock.release()
 
             else:
-                print("     domain not allowed")
+                #print("     domain not allowed")
                 self.lock.release()
 
+    # Writes in the hash of a page to db
+    def update_page_hash(self):
+        # acquire lock
+        self.lock.acquire()
+        # Calculate hash from html
+        hash = hash_tool.create_content_hash(self.current_page_html)
 
+        # update hash of a page in db
+        updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1], self.page_currently_crawling[2],
+                                            self.page_currently_crawling[3], self.page_currently_crawling[4], hash,
+                                            self.page_currently_crawling[6], self.page_currently_crawling[7])
+        self.page_currently_crawling = updated_page
+        self.lock.release()
+
+    # Returns true if hash calculated from page html already exists in db. Also marks page as "DUPLICATE" in db
+    def handle_duplicate_page(self):
+        # acquire lock
+        self.lock.acquire()
+
+        # Hash of a passed html_content
+        h = hash_tool.create_content_hash(self.current_page_html)
+
+        # Check if page is exact copy of already parsed documents in database
+        if db.find_page_duplicate(h):
+            # Update page as 'DUPLICATE'
+            updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
+                                                PAGE_TYPE_CODES[1], self.page_currently_crawling[3],
+                                                self.page_currently_crawling[4], self.page_currently_crawling[5],
+                                                self.page_currently_crawling[6], self.page_currently_crawling[7])
+            self.page_currently_crawling = updated_page
+            print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
+            self.lock.release()
+            return True
+        else:
+            self.lock.release()
+            return False

@@ -27,7 +27,7 @@ def insert_seed_urls_into_db():
         current_netloc = urllib.parse.urlparse(seed_url).netloc
 
         current_site = db.insert_site(current_netloc, "robotstext", "sitemaptext")
-        current_page = db.insert_page(current_site[0], PAGE_TYPE_CODES[2], current_url, "", "200", "040521")
+        current_page = db.insert_page(current_site[0], PAGE_TYPE_CODES[2], current_url, "", "","200", "040521")
 
 
 def create_workers():
