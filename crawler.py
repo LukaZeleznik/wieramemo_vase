@@ -84,7 +84,7 @@ class Crawler(Thread):
                     if self.handle_duplicate_page():
                         self.update_page_hash()
                         # Do not save html_content since this page is a duplicate
-                        pass
+
                     else:
                         self.update_page_hash()
 
@@ -307,6 +307,27 @@ class Crawler(Thread):
                 self.lock.release()
 
     # Writes in the hash of a page to db
+
+    def check_if_page_is_in_allowed_domain(self):
+        # check if page contains gov.si
+        pass
+
+    def check_page_url_duplicate(self):
+        # check if page url already exists in db
+        pass
+
+    def check_if_domain_already_exists(self):
+        pass
+
+    def check_if_page_is_allowed_by_robots_txt(self):
+        pass
+
+
+
+
+
+
+
     def update_page_hash(self):
         # acquire lock
         self.lock.acquire()
