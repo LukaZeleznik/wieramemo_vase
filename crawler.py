@@ -70,11 +70,11 @@ class Crawler(Thread):
                     continue
                     
 
-                self.current_page_html = self.crawl_page()
+                self.current_page_html, current_page_type = self.crawl_page()
 
-                if self.current_page_html == "BINARY":
-                    #TODO: save page as binary
-                    pass
+                if self.current_page_html != "HTML":
+                    self.insert_page_as_binary(current_page_type)
+                    continue
 
                 if self.current_page_html is not None:
                     # the page has not yet been crawled, so crawl it
@@ -151,19 +151,21 @@ class Crawler(Thread):
 
         if(req.headers['content-type'] == "application/pdf"):
             print("PDF")
-            return "BINARY"
+            current_page_type = "PDF"
         elif(req.headers['content-type'] == "application/msword"):
             print("DOC")
-            return "BINARY"
+            current_page_type = "DOC"
         elif(req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
             print("DOCX")
-            return "BINARY"
+            current_page_type = "DOCX"
         elif(req.headers['content-type'] == "application/vnd.ms-powerpoint"):
             print("PPT")
-            return "BINARY"
+            current_page_type = "PPT"
         elif(req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.presentationml.presentation"):
             print("PPTX")
-            return "BINARY"
+            current_page_type = "PPTX"
+        else:
+            current_page_type = "HTML"
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
@@ -176,7 +178,7 @@ class Crawler(Thread):
         html_text = driver.page_source
         driver.quit()
 
-        return html_text
+        return html_text, current_page_type
 
 
     # Find a href attributes on html page
@@ -363,3 +365,10 @@ class Crawler(Thread):
         else:
             self.lock.release()
             return False
+
+    def insert_page_as_binary(self, data_type):
+        db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1], "BINARY",
+            self.page_currently_crawling[3], self.page_currently_crawling[4], self.page_currently_crawling[5],
+            self.page_currently_crawling[6], self.page_currently_crawling[7])
+
+        db.insert_page_data(self.page_currently_crawling[0], data_type, self.current_page_html)
