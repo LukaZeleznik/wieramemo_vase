@@ -1,18 +1,26 @@
 import urllib.robotparser
 import requests
 
-robotstxt = requests.get("https://www.gov.si/robots.txt")
-print(robotstxt.status_code)
-if robotstxt.status_code != 200:
-    return "",""
+iz_baze = '''User-agent: *
+Disallow: /admin
+Disallow: /resources
+Disallow: /pomoc
+
+Sitemap: https://www.gov.si/sitemap.xml
+
+
+'''
+
  
 rp = urllib.robotparser.RobotFileParser()
-rp.set_url("https://www.luki.ml/robots.txt")
-rp.read()
-sitemap = rp.site_maps()
+rp.parse(iz_baze.splitlines())
+print(rp.site_maps())
+print(rp.can_fetch("*", "https://www.gov.si/admin"))
 
-robotstxt = requests.get("https://www.luki.ml/robots.txt").content.decode("utf-8") 
+#sitemap = rp.site_maps()
+
+#robotstxt = requests.get("https://www.luki.ml/robots.txt").content.decode("utf-8") 
 #if sitemap[0]: sitemap = requests.get(sitemap[0]).content.decode("utf-8")
 #else: sitemap = ""
 
-print(robotstxt)
+#print(rp.read())

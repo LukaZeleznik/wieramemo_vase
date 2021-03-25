@@ -307,7 +307,7 @@ class Crawler(Thread):
     def check_if_page_is_allowed_by_robots_txt(self, site_obj, link_url):
         rp = urllib.robotparser.RobotFileParser()
 
-        rp.parse(site_obj[2])
+        rp.parse(site_obj[2].splitlines())
         #rp.set_url("http://" + self.site_currently_crawling[1] + "/robots.txt")
         rp.read()
         return rp.can_fetch(USER_AGENT, link_url)
