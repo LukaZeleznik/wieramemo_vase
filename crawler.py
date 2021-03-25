@@ -59,6 +59,13 @@ class Crawler(Thread):
 
                 print("page to crawl found:", page_to_crawl)
 
+                rp = urllib.robotparser.RobotFileParser()
+                rp.set_url("http://"+self.site_currently_crawling[1]+"/robots.txt")
+                rp.read()
+                if (rp.can_fetch(USER_AGENT, self.page_currently_crawling[3])) is False:
+                    continue
+                    
+
                 self.current_page_html = self.crawl_page()
 
                 if self.current_page_html == "BINARY":
