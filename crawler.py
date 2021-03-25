@@ -82,11 +82,10 @@ class Crawler(Thread):
 
                     # If page hash for this page is equal to some other page - update to DUPLICATE
                     if self.handle_duplicate_page():
-                        self.update_page_hash()
-                        # Do not save html_content since this page is a duplicate
+                        # TODO: Do not save html_content since this page is a duplicate
+                        pass
 
-                    else:
-                        self.update_page_hash()
+                    self.update_page_hash()
 
                     self.links_to_crawl = self.gather_links()
 
@@ -247,86 +246,72 @@ class Crawler(Thread):
             all_pages = db.get_all_pages()
 
             # Only scrape sites in the gov.si domain
-            ALLOWED_DOMAIN = ".gov.si"
-            if ALLOWED_DOMAIN in current_link_domain:
+            if not self.check_if_current_domain_is_allowed(current_link_domain) or self.check_page_url_duplicate(all_pages, current_link_url):
+                self.lock.release()
+                continue
 
-                # Only add pages in the allowed domain
+            # Only add pages in the allowed domain
 
-                # check if the link exists in any of the pages in db
-                duplicate_found = False
-                for page in all_pages:
-
-                    current_page_url_obj = urllib.parse.urlparse(page[3])
-
-                    current_saved_page_url_string = current_page_url_obj.geturl()
-
-                    if current_saved_page_url_string == current_link_url:
-                        duplicate_found = True
-
-                        break
-                if duplicate_found:
-                    #print("     duplicate found")
-                    self.lock.release()
-                    continue
-
-
+            # check if the link exists in any of the pages in db
+            if self.check_page_url_duplicate(all_pages, current_link_url):
+                self.lock.release()
+            else:
                 # check if the domain of the link already exists in db
                 same_domain = False
 
-                for site in all_sites:
-                    current_site_url_obj = urllib.parse.urlparse(site[1])
-                    current_saved_site_url = "http://" + current_site_url_obj.netloc
+                domain_id = self.return_domain_if_it_already_exists(all_sites, current_link_domain)
 
-                    #print("site[1]", site[1])
+                if domain_id == -1:
+                    # new domain
 
-                    current_saved_site_url = site[1].replace("www.", "")
                     current_link_domain = current_link_domain.replace("www.", "")
-
-                    #print("-<<<<>>>>>>><<<<<<<<<<->>>>>>>>>>>>> ", current_saved_site_url, current_link_domain)
-                    if current_saved_site_url == current_link_domain:
-                        # if it does, create a new page in db with current url on this site
-
-                        site_id = site[0]
-                        # create page
-                        new_page = db.insert_page(site_id, PAGE_TYPE_CODES[2], current_link_url , "", "", "200", "040521")
-                        same_domain = True
-                        break
-
-                if same_domain == True:
-                    #print("     same domain")
-                    self.lock.release()
-                else:
-                    # create new domain
-                    current_link_domain = current_link_domain.replace("www.", "")
-                    robots_content, sitemap_content = get_robots_and_sitemap_content(new_site[0])
-                    new_site = db.insert_site(current_link_domain, robots_content, sitemap_content)
-                    # create page at this domain
+                    new_site = db.insert_site(current_link_domain, "robotstext", "sitemaptext")
                     new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
-                    #print("     new domain")
-                    self.lock.release()
 
-            else:
-                #print("     domain not allowed")
+                else:
+                    # existing domain
+                    new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
+
                 self.lock.release()
 
-    # Writes in the hash of a page to db
 
-    def check_if_page_is_in_allowed_domain(self):
+    def check_if_current_domain_is_allowed(self, domain_netloc):
+
+        ALLOWED_DOMAIN = ".gov.si"
         # check if page contains gov.si
-        pass
+        return ALLOWED_DOMAIN in domain_netloc
 
-    def check_page_url_duplicate(self):
+    def check_page_url_duplicate(self, all_pages, link_url):
         # check if page url already exists in db
+
+        duplicate_found = False
+        for page in all_pages:
+
+            current_page_url_obj = urllib.parse.urlparse(page[3])
+            current_page_url_string = current_page_url_obj.geturl()
+
+            if current_page_url_string == link_url:
+                duplicate_found = True
+
+                break
+
+        return duplicate_found
+
+    def return_domain_if_it_already_exists(self, all_sites, domain_netloc):
+        current_link_domain = domain_netloc.replace("www.", "")
+
+        for site in all_sites:
+            current_site_url_obj = urllib.parse.urlparse(site[1])
+            current_saved_site_url = site[1].replace("www.", "")
+
+            if current_saved_site_url == current_link_domain:
+                return site[0]
+
+        return -1
+
+
+    def check_if_page_is_allowed_by_robots_txt(self, link_url):
         pass
-
-    def check_if_domain_already_exists(self):
-        pass
-
-    def check_if_page_is_allowed_by_robots_txt(self):
-        pass
-
-
-
 
 
 
