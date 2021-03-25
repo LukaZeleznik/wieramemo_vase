@@ -72,7 +72,7 @@ class Crawler(Thread):
 
                 self.current_page_html, current_page_type = self.crawl_page()
 
-                if self.current_page_html != "HTML":
+                if current_page_type != "HTML":
                     self.insert_page_as_binary(current_page_type)
                     continue
 
@@ -371,7 +371,7 @@ class Crawler(Thread):
         sitemap = rp.site_maps()
 
         robotstxt_content = robotstxt.content.decode("utf-8") 
-        if sitemap[0]: sitemap_content = requests.get(sitemap[0]).content.decode("utf-8")
+        if sitemap is not None: sitemap_content = requests.get(sitemap[0]).content.decode("utf-8")
         else: sitemap_content = ""
 
         return robotstxt_content, sitemap_content
