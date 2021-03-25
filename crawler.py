@@ -56,7 +56,6 @@ class Crawler(Thread):
             page_to_crawl, page_to_crawl_site = self.get_page_to_crawl()
             self.page_currently_crawling = page_to_crawl
             self.site_currently_crawling = page_to_crawl_site
-            self.page_currently_crawling_id = page_to_crawl[0]
 
             # check if there is a page available to crawl
             if self.page_currently_crawling is not None and self.site_currently_crawling is not None:
@@ -226,7 +225,7 @@ class Crawler(Thread):
             path = urllib.parse.urlparse(url).path
             filename = os.path.basename(path)
 
-            db.insert_image(self.page_currently_crawling_id, filename, content_type, content, int(time.time()))
+            db.insert_image(self.page_currently_crawling[0], filename, content_type, content, int(time.time()))
 
 
         return list(links)
@@ -246,7 +245,8 @@ class Crawler(Thread):
             all_pages = db.get_all_pages()
 
             # Only scrape sites in the gov.si domain
-            if not self.check_if_current_domain_is_allowed(current_link_domain) or self.check_page_url_duplicate(all_pages, current_link_url):
+            if not self.check_if_current_domain_is_allowed(current_link_domain) or \
+                    self.check_page_url_duplicate(all_pages, current_link_url):
                 self.lock.release()
                 continue
 
@@ -264,13 +264,16 @@ class Crawler(Thread):
                 if domain_id == -1:
                     # new domain
                     current_link_domain = current_link_domain.replace("www.", "")
+
                     robotstext_content, sitemap_content = self.get_robots_and_sitemap_content(current_link_domain)
                     new_site = db.insert_site(current_link_domain, robotstext_content, sitemap_content)
-                    new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
+                    if self.check_if_page_is_allowed_by_robots_txt(new_site):
+                        new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
 
                 else:
                     # existing domain
-                    new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
+                    if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling):
+                        new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
 
                 self.lock.release()
 
@@ -309,11 +312,13 @@ class Crawler(Thread):
 
         return -1
 
+    def check_if_page_is_allowed_by_robots_txt(self, site_obj, link_url):
+        rp = urllib.robotparser.RobotFileParser()
 
-    def check_if_page_is_allowed_by_robots_txt(self, link_url):
-        pass
-
-
+        rp.parse(site_obj[2])
+        #rp.set_url("http://" + self.site_currently_crawling[1] + "/robots.txt")
+        rp.read()
+        return rp.can_fetch(USER_AGENT, link_url)
 
 
     def update_page_hash(self):
