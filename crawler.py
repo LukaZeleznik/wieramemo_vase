@@ -59,42 +59,34 @@ class Crawler(Thread):
 
             # check if there is a page available to crawl
             if self.page_currently_crawling is not None and self.site_currently_crawling is not None:
+                continue
 
-                #print("page to crawl found:", page_to_crawl)
+            self.current_page_html, current_page_type = self.crawl_page()
 
-                rp = urllib.robotparser.RobotFileParser()
-                rp.set_url("http://"+self.site_currently_crawling[1]+"/robots.txt")
-                rp.read()
-                if (rp.can_fetch(USER_AGENT, self.page_currently_crawling[3])) is False:
-                    continue
-                    
+            if current_page_type != "HTML":
+                self.insert_page_as_binary(current_page_type)
+                continue
 
-                self.current_page_html, current_page_type = self.crawl_page()
+            if self.current_page_html is not None:
+                # the page has not yet been crawled, so crawl it
+                print("--------------------> self.page_currently_crawling: ", self.page_currently_crawling[3])
 
-                if current_page_type != "HTML":
-                    self.insert_page_as_binary(current_page_type)
-                    continue
-
-                if self.current_page_html is not None:
-                    # the page has not yet been crawled, so crawl it
-                    print("--------------------> self.page_currently_crawling: ", self.page_currently_crawling[3])
-
-                    # If page hash for this page is equal to some other page - update to DUPLICATE
-                    if self.handle_duplicate_page():
-                        # TODO: Do not save html_content since this page is a duplicate
-                        pass
-
-                    self.update_page_hash()
-
-                    self.links_to_crawl = self.gather_links()
-
-                    if len(self.links_to_crawl) > 0:
-                        # if any links are found, add them to the frontier
-                        self.add_links_to_frontier()
-
-                else:
-                    # the page has already been crawled, need to mark it as duplicate
+                # If page hash for this page is equal to some other page - update to DUPLICATE
+                if self.handle_duplicate_page():
+                    # TODO: Do not save html_content since this page is a duplicate
                     pass
+
+                self.update_page_hash()
+
+                self.links_to_crawl = self.gather_links()
+
+                if len(self.links_to_crawl) > 0:
+                    # if any links are found, add them to the frontier
+                    self.add_links_to_frontier()
+
+            else:
+                # the page has already been crawled, need to mark it as duplicate
+                pass
 
             # time.sleep(1)
 
