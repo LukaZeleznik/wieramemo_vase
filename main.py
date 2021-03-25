@@ -26,7 +26,9 @@ def insert_seed_urls_into_db():
         current_url = urllib.parse.urlparse(seed_url).geturl()
         current_netloc = urllib.parse.urlparse(seed_url).netloc
 
-        current_site = db.insert_site(current_netloc, "robotstext", "sitemaptext")
+        robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content("", current_netloc)
+
+        current_site = db.insert_site(current_netloc, robotstext_content, sitemap_content)
         current_page = db.insert_page(current_site[0], PAGE_TYPE_CODES[2], current_url, "", "","200", "040521")
 
 

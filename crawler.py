@@ -298,7 +298,8 @@ class Crawler(Thread):
                 else:
                     # create new domain
                     current_link_domain = current_link_domain.replace("www.", "")
-                    new_site = db.insert_site(current_link_domain, "robotstext", "sitemaptext")
+                    robots_content, sitemap_content = get_robots_and_sitemap_content(new_site[0])
+                    new_site = db.insert_site(current_link_domain, robots_content, sitemap_content)
                     # create page at this domain
                     new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
                     #print("     new domain")
@@ -372,3 +373,21 @@ class Crawler(Thread):
             self.page_currently_crawling[6], self.page_currently_crawling[7])
 
         db.insert_page_data(self.page_currently_crawling[0], data_type, self.current_page_html)
+    def get_robots_and_sitemap_content(self, new_site):
+
+        robotstxt = requests.get("http://" + new_site + "/robots.txt")
+        print(robotstxt.status_code)
+        if robotstxt.status_code != 200:
+            return "",""
+
+        rp = urllib.robotparser.RobotFileParser()
+        rp.set_url("http://" + new_site + "/robots.txt")
+        rp.read()
+        sitemap = rp.site_maps()
+
+        robotstxt_content = robotstxt.content.decode("utf-8") 
+        if sitemap[0]: sitemap_content = requests.get(sitemap[0]).content.decode("utf-8")
+        else: sitemap_content = ""
+
+        return robotstxt_content, sitemap_content
+
