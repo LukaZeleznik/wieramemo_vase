@@ -192,6 +192,9 @@ class Crawler(Thread):
 
             current_parsed_url = urllib.parse.urlparse(current_url)
 
+            print("DOMAIN", self.site_currently_crawling[1])
+            print("URL------->", current_url ,current_parsed_url.geturl())
+
             links.add(current_parsed_url)
 
         for image in soup.find_all("img"):
@@ -231,7 +234,9 @@ class Crawler(Thread):
         for link in self.links_to_crawl:
 
             current_link_url = link.geturl()
-            current_link_domain = link.netloc
+
+            # print("SCHEME: --->", link.scheme)
+            current_link_domain = link.scheme + "://" + link.netloc
 
             #print("current link: ", current_link_url)
 
@@ -256,7 +261,6 @@ class Crawler(Thread):
 
                 if domain_id == -1:
                     # new domain
-                    current_link_domain = current_link_domain.replace("www.", "")
 
                     robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content(current_link_domain)
                     new_site = db.insert_site(current_link_domain, robotstext_content, sitemap_content)
@@ -297,11 +301,10 @@ class Crawler(Thread):
         return duplicate_found
 
     def return_domain_if_it_already_exists(self, all_sites, domain_netloc):
-        current_link_domain = domain_netloc.replace("www.", "")
+        current_link_domain = domain_netloc
 
         for site in all_sites:
-            current_site_url_obj = urllib.parse.urlparse(site[1])
-            current_saved_site_url = site[1].replace("www.", "")
+            current_saved_site_url = site[1]
 
             if current_saved_site_url == current_link_domain:
                 return site[0]
@@ -365,7 +368,7 @@ class Crawler(Thread):
     @staticmethod
     def get_robots_and_sitemap_content(new_site):
         try:
-            robotstxt = requests.get("http://" + new_site + "/robots.txt")
+            robotstxt = requests.get(new_site + "/robots.txt")
         except requests.exceptions.ConnectionError:
             print("Error: ", new_site, " has no robots.txt.")
             return "",""
@@ -374,7 +377,7 @@ class Crawler(Thread):
             return "",""
 
         rp = urllib.robotparser.RobotFileParser()
-        rp.set_url("http://" + new_site + "/robots.txt")
+        rp.set_url(new_site + "/robots.txt")
         rp.read()
         sitemap = rp.site_maps()
 
