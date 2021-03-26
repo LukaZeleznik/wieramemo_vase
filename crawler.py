@@ -58,8 +58,8 @@ class Crawler(Thread):
             self.site_currently_crawling = page_to_crawl_site
 
             # check if there is a page available to crawl
-            if self.page_currently_crawling is not None and self.site_currently_crawling is not None:
-                continue
+            if self.page_currently_crawling is None and self.site_currently_crawling is None:
+                break
 
             self.current_page_html, current_page_type = self.crawl_page()
 
@@ -107,7 +107,7 @@ class Crawler(Thread):
                 return None, None
 
             # get site url for the first page that has the tag frontier
-            page_to_crawl_site = db.get_site_by_id(page[1])
+            page_to_crawl_site = db.get_site_by_id(page_to_crawl[1])
 
             # check if the domain can be accessed at current time
             if hf.can_domain_be_accessed_at_current_time(page_to_crawl_site[1], self.time_accessed, self.time_between_calls):
@@ -222,7 +222,6 @@ class Crawler(Thread):
     def add_links_to_frontier(self):
         for link in self.links_to_crawl:
 
-
             current_link_url = link.geturl()
             current_link_domain = link.netloc
 
@@ -255,12 +254,12 @@ class Crawler(Thread):
 
                     robotstext_content, sitemap_content = self.get_robots_and_sitemap_content(current_link_domain)
                     new_site = db.insert_site(current_link_domain, robotstext_content, sitemap_content)
-                    if self.check_if_page_is_allowed_by_robots_txt(new_site):
+                    if self.check_if_page_is_allowed_by_robots_txt(new_site, current_link_url):
                         new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
 
                 else:
                     # existing domain
-                    if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling):
+                    if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
                         new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
 
                 self.lock.release()
@@ -305,7 +304,7 @@ class Crawler(Thread):
 
         rp.parse(site_obj[2].splitlines())
         #rp.set_url("http://" + self.site_currently_crawling[1] + "/robots.txt")
-        rp.read()
+        #rp.read()
         return rp.can_fetch(USER_AGENT, link_url)
 
 
@@ -353,8 +352,12 @@ class Crawler(Thread):
         db.insert_page_data(self.page_currently_crawling[0], data_type, self.current_page_html)
         
     def get_robots_and_sitemap_content(self, new_site):
+        try:
+            robotstxt = requests.get("http://" + new_site + "/robots.txt")
+        except requests.exceptions.ConnectionError:
+            print("Error: ", new_site, " has no robots.txt.")
+            return "",""
 
-        robotstxt = requests.get("http://" + new_site + "/robots.txt")
         if robotstxt.status_code != 200:
             return "",""
 
