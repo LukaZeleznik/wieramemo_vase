@@ -8,6 +8,9 @@ import db_methods as db
 import urllib.request, urllib.robotparser, urllib.parse
 import run_this_if_you_want_to_clear_db
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 USER_AGENT = 'fri-wier-wieramemo-vase'
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 NUMBER_OF_THREADS = 3
@@ -18,6 +21,10 @@ time_accessed = {'http://gov.si': 0, 'http://evem.gov.si': 0, 'http://e-uprava.g
 
 crawler_threads = []
 
+import sys
+print("Python version")
+print (sys.version)
+
 
 # inserting page and site rows for seed urls
 def insert_seed_urls_into_db():
@@ -26,7 +33,7 @@ def insert_seed_urls_into_db():
         current_url = urllib.parse.urlparse(seed_url).geturl()
         current_netloc = urllib.parse.urlparse(seed_url).netloc
 
-        robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content("", current_netloc)
+        robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content(current_netloc)
 
         current_site = db.insert_site(current_netloc, robotstext_content, sitemap_content)
         current_page = db.insert_page(current_site[0], PAGE_TYPE_CODES[2], current_url, "", "","200", "040521")

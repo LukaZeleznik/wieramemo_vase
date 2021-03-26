@@ -131,7 +131,7 @@ def get_all_pages():
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "SELECT * FROM crawldb.page"
+    query = "SELECT * FROM crawldb.page ORDER BY id ASC"
     cur.execute(query)
     conn.commit()
 

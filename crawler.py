@@ -58,10 +58,12 @@ class Crawler(Thread):
             self.site_currently_crawling = page_to_crawl_site
 
             # check if there is a page available to crawl
+
             if self.page_currently_crawling is None and self.site_currently_crawling is None:
                 break
 
             self.current_page_html, current_page_type = self.crawl_page()
+
 
             if current_page_type != "HTML":
                 self.insert_page_as_binary(current_page_type)
@@ -90,19 +92,18 @@ class Crawler(Thread):
         while True:
             # acquire lock
             self.lock.acquire()
-
-            # get all pages
             all_pages = db.get_all_pages()
+            self.lock.release()
 
             # find first page that has the tag frontier
             page_to_crawl = None
             for page in all_pages:
+
                 if page[2] == "FRONTIER":
                     page_to_crawl = page
                     break
             if page_to_crawl is None:
                 print("---------------------->", threading.get_ident(), "There are no pages available to crawl!")
-                self.lock.release()
                 self.stop()
                 return None, None
 
@@ -112,15 +113,18 @@ class Crawler(Thread):
             # check if the domain can be accessed at current time
             if hf.can_domain_be_accessed_at_current_time(page_to_crawl_site[1], self.time_accessed, self.time_between_calls):
                 # if yes, return page and domain, and mark the page as visited (just change the tag to HTML)
+
+                self.lock.acquire()
                 updated_page = db.update_page_by_id(page_to_crawl[0], page_to_crawl[1], PAGE_TYPE_CODES[0],
                                                     page_to_crawl[3], page_to_crawl[4], page_to_crawl[5], page_to_crawl[6], page_to_crawl[7])
-                page_to_crawl = updated_page
                 self.lock.release()
+
+                page_to_crawl = updated_page
+
                 return page_to_crawl, page_to_crawl_site
 
             else:
                 # if no, then wait for a random time
-                self.lock.release()
                 random_wait = random.uniform(0, self.time_between_calls)
                 time.sleep(random_wait)
 
@@ -152,6 +156,10 @@ class Crawler(Thread):
             current_page_type = "PPTX"
         else:
             current_page_type = "HTML"
+
+
+        status_code = req.status_code
+        # print(status_code)
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
@@ -230,19 +238,17 @@ class Crawler(Thread):
             self.lock.acquire()
             all_sites = db.get_all_sites()
             all_pages = db.get_all_pages()
+            self.lock.release()
 
             # Only scrape sites in the gov.si domain
             if not self.check_if_current_domain_is_allowed(current_link_domain) or \
                     self.check_page_url_duplicate(all_pages, current_link_url):
-                self.lock.release()
                 continue
 
             # Only add pages in the allowed domain
 
             # check if the link exists in any of the pages in db
-            if self.check_page_url_duplicate(all_pages, current_link_url):
-                self.lock.release()
-            else:
+            if not self.check_page_url_duplicate(all_pages, current_link_url):
                 # check if the domain of the link already exists in db
                 same_domain = False
 
@@ -252,17 +258,20 @@ class Crawler(Thread):
                     # new domain
                     current_link_domain = current_link_domain.replace("www.", "")
 
-                    robotstext_content, sitemap_content = self.get_robots_and_sitemap_content(current_link_domain)
+                    robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content(current_link_domain)
                     new_site = db.insert_site(current_link_domain, robotstext_content, sitemap_content)
+
                     if self.check_if_page_is_allowed_by_robots_txt(new_site, current_link_url):
+                        self.lock.acquire()
                         new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
+                        self.lock.release()
 
                 else:
                     # existing domain
                     if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
+                        self.lock.acquire()
                         new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
-
-                self.lock.release()
+                        self.lock.release()
 
 
     def check_if_current_domain_is_allowed(self, domain_netloc):
@@ -345,13 +354,16 @@ class Crawler(Thread):
             return False
 
     def insert_page_as_binary(self, data_type):
+        self.lock.acquire()
         db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1], "BINARY",
             self.page_currently_crawling[3], self.page_currently_crawling[4], self.page_currently_crawling[5],
             self.page_currently_crawling[6], self.page_currently_crawling[7])
 
         db.insert_page_data(self.page_currently_crawling[0], data_type, self.current_page_html)
-        
-    def get_robots_and_sitemap_content(self, new_site):
+
+
+    @staticmethod
+    def get_robots_and_sitemap_content(new_site):
         try:
             robotstxt = requests.get("http://" + new_site + "/robots.txt")
         except requests.exceptions.ConnectionError:
