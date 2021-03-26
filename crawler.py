@@ -67,7 +67,7 @@ class Crawler(Thread):
                 self.insert_page_as_binary(current_page_type)
                 continue
 
-            if self.current_page_html is not None:
+            else:
                 # the page has not yet been crawled, so crawl it
                 print("--------------------> self.page_currently_crawling: ", self.page_currently_crawling[3])
 
@@ -83,10 +83,6 @@ class Crawler(Thread):
                 if len(self.links_to_crawl) > 0:
                     # if any links are found, add them to the frontier
                     self.add_links_to_frontier()
-
-            else:
-                # the page has already been crawled, need to mark it as duplicate
-                pass
 
             # time.sleep(1)
 
@@ -355,6 +351,7 @@ class Crawler(Thread):
             self.page_currently_crawling[6], self.page_currently_crawling[7])
 
         db.insert_page_data(self.page_currently_crawling[0], data_type, self.current_page_html)
+        
     def get_robots_and_sitemap_content(self, new_site):
 
         robotstxt = requests.get("http://" + new_site + "/robots.txt")
