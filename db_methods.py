@@ -426,3 +426,22 @@ def find_page_duplicate(hash_content):
     conn.close()
 
     return page is not None
+
+def check_site_exists(domain):
+    conn = psycopg2.connect(CONN_DATA)
+    cur = conn.cursor()
+
+    query = "SELECT id FROM crawldb.site WHERE domain = %s"
+    data_to_insert = ['http://e-uprava.gov.si']
+    cur.execute(query, data_to_insert)
+    conn.commit()
+
+    res = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    #print("check site exists: ", res)
+
+    if(res is None): return False
+
+    return res[0]

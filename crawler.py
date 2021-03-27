@@ -329,7 +329,7 @@ class Crawler(Thread):
             # print("SCHEME: --->", link.scheme)
             current_link_domain = link.scheme + "://" + link.netloc
 
-            # print("current link: ", current_link_url)
+            #print("current_link_domain: ", current_link_domain)
 
 
 
@@ -341,16 +341,17 @@ class Crawler(Thread):
             # Only add pages in the allowed domain
 
             #self.lock.acquire()
-            all_sites = db.get_all_sites()
+            #all_sites = db.get_all_sites()
             #all_pages = db.get_all_pages()
 
             # check if the link exists in any of the pages in db
             # check if the domain of the link already exists in db
             same_domain = False
 
-            domain_id = self.return_domain_if_it_already_exists(all_sites, current_link_domain)
+            #domain_id = self.return_domain_if_it_already_exists(all_sites, current_link_domain)
+            domain_id_or_false = db.check_site_exists(current_link_domain)
 
-            if domain_id == -1:
+            if not domain_id_or_false:
                 # new domain
 
                 robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content(current_link_domain)
@@ -367,7 +368,7 @@ class Crawler(Thread):
 
 
                     #print("inserting", current_link_url)
-                    new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
+                    new_page = db.insert_page(domain_id_or_false, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                 "040521")
 
             #self.lock.release()
