@@ -446,7 +446,7 @@ def check_site_exists(domain):
     cur = conn.cursor()
 
     query = "SELECT id FROM crawldb.site WHERE domain = %s"
-    data_to_insert = ['http://e-uprava.gov.si']
+    data_to_insert = [domain]
     cur.execute(query, data_to_insert)
     conn.commit()
 

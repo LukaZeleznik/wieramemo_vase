@@ -362,7 +362,7 @@ class Crawler(Thread):
                     new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                 "040521")
                     db.insert_link(self.page_currently_crawling[0],new_page[0])
-
+                    print("inserting new page new domain")
             else:
                 # existing domain
                 if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
@@ -371,6 +371,7 @@ class Crawler(Thread):
                     #print("inserting", current_link_url)
                     new_page = db.insert_page(domain_id_or_false, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                 "040521")
+                    print("inserting new page")
 
             #self.lock.release()
 
@@ -475,7 +476,7 @@ class Crawler(Thread):
             print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
             self.lock.release()
             return True
-        else:
+        """ else:
             # Calculate similarity html_content with others
             all_crawled_pages = db.get_all_crawled_pages()
             for page in all_crawled_pages:
@@ -497,7 +498,7 @@ class Crawler(Thread):
                         self.lock.release()
                         return True
             self.lock.release()
-            return False
+            return False """
 
     def insert_page_as_binary(self, data_type):
         #self.lock.acquire()
