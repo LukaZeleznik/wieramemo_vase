@@ -16,6 +16,7 @@ import requests
 import os.path
 from hash_tool import HashTool
 from datetime import datetime
+import urlcanon
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
@@ -87,8 +88,6 @@ class Crawler(Thread):
                     pass
 
                 self.insert_page_hash()
-                self.insert_status_code()
-                self.insert_accessed_time()
 
                 self.links_to_crawl = self.gather_links()
 
@@ -113,7 +112,7 @@ class Crawler(Thread):
                     page_to_crawl = page
                     break
             if page_to_crawl is None:
-                print("---------------------->", threading.get_ident(), "There are no pages available to crawl!")
+                #print("---------------------->", threading.get_ident(), "There are no pages available to crawl!")
                 return None, None
 
             # get site url for the first page that has the tag frontier
@@ -173,6 +172,10 @@ class Crawler(Thread):
         # Set status code and accessed time of this page
         self.status_code = req.status_code
         self.accessed_time = datetime.now().strftime(TIMESTAMP_FORMAT)
+        # Update it in the db
+        self.insert_status_code()
+        self.insert_accessed_time()
+
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
@@ -199,12 +202,14 @@ class Crawler(Thread):
         for link in soup.find_all("a"):
             current_url_relative = link.get('href')
 
-            current_url = urllib.parse.urljoin("http://" + self.site_currently_crawling[1], current_url_relative)
+            current_url = urllib.parse.urljoin(self.site_currently_crawling[1], current_url_relative)
+
+            current_parsed_url_urlcanon = urlcanon.parse_url(current_url)
+            urlcanon.whatwg(current_parsed_url_urlcanon)
 
             current_parsed_url = urllib.parse.urlparse(current_url)
 
-            #print("DOMAIN", self.site_currently_crawling[1])
-            #print("URL------->", current_url, current_parsed_url.geturl())
+            #print("uglyurl: ", current_url, "CANON: ", current_parsed_url_urlcanon, "current_parsed_url: ", current_parsed_url)
 
             links.add(current_parsed_url)
 
