@@ -476,6 +476,7 @@ class Crawler(Thread):
             print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
             #self.lock.release()
             return True
+        return False
         """ else:
             # Calculate similarity html_content with others
             all_crawled_pages = db.get_all_crawled_pages()
@@ -499,6 +500,7 @@ class Crawler(Thread):
                         return True
             self.lock.release()
             return False """
+        
 
     def insert_page_as_binary(self, data_type):
         #self.lock.acquire()
