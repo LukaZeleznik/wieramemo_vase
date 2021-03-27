@@ -33,7 +33,7 @@ TIMEOUT = 5
 PAGE_TYPE_CODES = ["HTML", "DUPLICATE", "FRONTIER", "BINARY"]
 DATA_TYPES = ["DOC", "DOCX", "PDF", "PPT", "PPTX"]
 TIMESTAMP_FORMAT = '%Y-%m-%d %H:%M:%S'
-MAX_HTML_SIMILARITY = 0.99
+MAX_HTML_SIMILARITY = 1
 
 # Create a global hash tool for page signatures
 hash_tool = HashTool()
@@ -433,28 +433,6 @@ class Crawler(Thread):
         self.page_currently_crawling = updated_page
         #self.lock.release()
 
-    # Returns true if hash calculated from page html already exists in db. Also marks page as "DUPLICATE" in db
-    def handle_duplicate_page(self):
-        # acquire lock
-        #self.lock.acquire()
-
-        # Hash of a passed html_content
-        h = hash_tool.create_content_hash(self.current_page_html)
-
-        # Check if page is exact copy of already parsed documents in database
-        if db.find_page_duplicate(h):
-            # Update page as 'DUPLICATE'
-            updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
-                                                PAGE_TYPE_CODES[1], self.page_currently_crawling[3],
-                                                self.page_currently_crawling[4], self.page_currently_crawling[5],
-                                                self.page_currently_crawling[6], self.page_currently_crawling[7])
-            self.page_currently_crawling = updated_page
-            print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
-            #self.lock.release()
-            return True
-        else:
-            #self.lock.release()
-            return False
 
     # Returns true if hash calculated from page html already exists in db. Also marks page as "DUPLICATE" in db
     def handle_duplicate_page(self):
@@ -473,7 +451,11 @@ class Crawler(Thread):
                                                 self.page_currently_crawling[4], self.page_currently_crawling[5],
                                                 self.page_currently_crawling[6], self.page_currently_crawling[7])
             self.page_currently_crawling = updated_page
-            print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
+            print("Page ", self.page_currently_crawling[3], "is a DUPLICATE from", returned_duplicate[3])
+
+            # Save a new link: to_page is set to duplicate version
+            db.insert_link(self.page_currently_crawling[0], returned_duplicate[0])
+
             #self.lock.release()
             return True
         return False
