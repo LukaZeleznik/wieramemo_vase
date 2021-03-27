@@ -65,7 +65,10 @@ class Crawler(Thread):
             # check if there is a page available to crawl
 
             if self.page_currently_crawling is None and self.site_currently_crawling is None:
-                break
+                random_wait = random.uniform(0, self.time_between_calls)
+                time.sleep(random_wait)
+                continue
+
 
             self.current_page_html, current_page_type = self.crawl_page()
 
@@ -111,7 +114,6 @@ class Crawler(Thread):
                     break
             if page_to_crawl is None:
                 print("---------------------->", threading.get_ident(), "There are no pages available to crawl!")
-                self.stop()
                 return None, None
 
             # get site url for the first page that has the tag frontier
@@ -146,7 +148,8 @@ class Crawler(Thread):
         try:
             req = requests.get(page_to_crawl_url)
         except Exception:
-            return
+            print("url", page_to_crawl_url, "is not working")
+            return None, None
 
         if (req.headers['content-type'] == "application/pdf"):
             print("PDF")
@@ -306,13 +309,16 @@ class Crawler(Thread):
 
         return duplicate_found
 
-    def return_domain_if_it_already_exists(self, all_sites, domain_netloc):
-        current_link_domain = domain_netloc
+    def return_domain_if_it_already_exists(self, all_sites, domain_link):
+        current_link_domain_obj = urllib.parse.urlparse(domain_link)
+
+        domain_netloc = current_link_domain_obj.netloc
 
         for site in all_sites:
-            current_saved_site_url = site[1]
+            current_saved_site_obj = urllib.parse.urlparse(site[1])
+            current_saved_site_netloc = current_saved_site_obj.netloc
 
-            if current_saved_site_url == current_link_domain:
+            if current_saved_site_netloc == domain_netloc:
                 return site[0]
 
         return -1

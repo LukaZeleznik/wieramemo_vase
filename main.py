@@ -13,7 +13,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 USER_AGENT = 'fri-wier-wieramemo-vase'
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
-NUMBER_OF_THREADS = 3
+NUMBER_OF_THREADS = 8
 PAGE_TYPE_CODES = ["HTML","DUPLICATE","FRONTIER","BINARY"]
 DATA_TYPES = ["DOC","DOCX","PDF","PPT","PPTX"]
 
