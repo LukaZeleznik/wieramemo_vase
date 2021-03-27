@@ -340,35 +340,34 @@ class Crawler(Thread):
             # Only add pages in the allowed domain
 
             #self.lock.acquire()
-            #all_sites = db.get_all_sites()
+            all_sites = db.get_all_sites()
             #all_pages = db.get_all_pages()
 
             # check if the link exists in any of the pages in db
-            if not self.check_page_url_duplicate(all_pages, current_link_url):
-                # check if the domain of the link already exists in db
-                same_domain = False
+            # check if the domain of the link already exists in db
+            same_domain = False
 
-                domain_id = self.return_domain_if_it_already_exists(all_sites, current_link_domain)
+            domain_id = self.return_domain_if_it_already_exists(all_sites, current_link_domain)
 
-                if domain_id == -1:
-                    # new domain
+            if domain_id == -1:
+                # new domain
 
-                    robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content(current_link_domain)
-                    new_site = db.insert_site(current_link_domain, robotstext_content, sitemap_content)
+                robotstext_content, sitemap_content = Crawler.get_robots_and_sitemap_content(current_link_domain)
+                new_site = db.insert_site(current_link_domain, robotstext_content, sitemap_content)
 
-                    if self.check_if_page_is_allowed_by_robots_txt(new_site, current_link_url):
-                        new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
-                                                  "040521")
-                        db.insert_link(self.page_currently_crawling[0],new_page[0])
+                if self.check_if_page_is_allowed_by_robots_txt(new_site, current_link_url):
+                    new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
+                                                "040521")
+                    db.insert_link(self.page_currently_crawling[0],new_page[0])
 
-                else:
-                    # existing domain
-                    if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
+            else:
+                # existing domain
+                if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
 
 
-                        #print("inserting", current_link_url)
-                        new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
-                                                  "040521")
+                    #print("inserting", current_link_url)
+                    new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
+                                                "040521")
 
             #self.lock.release()
 
