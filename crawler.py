@@ -270,6 +270,7 @@ class Crawler(Thread):
         if len(onclicks) > 0:
             for onclick in onclicks:
                 x = onclick.find("location=")
+                if(x < 0): continue
                 onclick_split = onclick.split(onclick[x+9])
                 for index, string in enumerate(onclick_split):
                     if "location=" in string:
