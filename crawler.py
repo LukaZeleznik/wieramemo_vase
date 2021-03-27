@@ -86,41 +86,63 @@ class Crawler(Thread):
             self.links_to_crawl = []
 
             # retrieve a page that is suitable for crawling
+
+            t1_1 = time.time()
             page_to_crawl, page_to_crawl_site = self.get_page_to_crawl()
+            t2_1 = time.time()
+
             self.page_currently_crawling = page_to_crawl
             self.site_currently_crawling = page_to_crawl_site
 
+            print(self.page_currently_crawling[3], "finding url took", t2_1 - t1_1)
+
             # check if there is a page available to crawl
 
-            if self.page_currently_crawling is None and self.site_currently_crawling is None:
+            if self.page_currently_crawling is None or self.site_currently_crawling is None:
                 random_wait = random.uniform(0, self.time_between_calls)
                 time.sleep(random_wait)
                 continue
 
-
+            t1_2 = time.time()
             self.current_page_html, current_page_type = self.crawl_page()
+            t2_2 = time.time()
+
+            print(self.page_currently_crawling[3], "getting html took", t2_2 - t1_2)
+            #print("--------------------> self.page_currently_crawling: ", self.page_currently_crawling[3])
 
             if current_page_type != "HTML":
+                t1_6 = time.time()
                 self.insert_page_as_binary(current_page_type)
-                continue
+                t2_6 = time.time()
+                print(self.page_currently_crawling[3], "inserting binary took", t2_6 - t1_6)
 
             else:
-                # the page has not yet been crawled, so crawl it
-                print("--------------------> self.page_currently_crawling: ", self.page_currently_crawling[3])
+                if self.current_page_html is not None:
+                    # the page has not yet been crawled, so crawl it
 
-                # If page hash for this page is equal to some other page - update to DUPLICATE
-                if not self.handle_duplicate_page():
-                    # If page not a duplicate store its html_content
-                    self.insert_html_content()
-                    pass
+                    t1_3 = time.time()
+                    # If page hash for this page is equal to some other page - update to DUPLICATE
+                    if not self.handle_duplicate_page():
+                        # If page not a duplicate store its html_content
+                        self.insert_html_content()
+                        pass
 
-                self.insert_page_hash()
+                    self.insert_page_hash()
+                    t2_3 = time.time()
+                    print(self.page_currently_crawling[3], "checking duplicate html took", t2_3 - t1_3)
 
-                self.links_to_crawl = self.gather_links()
+                    t1_4 = time.time()
+                    self.links_to_crawl = self.gather_links()
+                    t2_4 = time.time()
+                    print(self.page_currently_crawling[3], "gathering links took", t2_4 - t1_4)
 
-                if len(self.links_to_crawl) > 0:
-                    # if any links are found, add them to the frontier
-                    self.add_links_to_frontier()
+                    t1_5 = time.time()
+                    if len(self.links_to_crawl) > 0:
+                        # if any links are found, add them to the frontier
+                        self.add_links_to_frontier()
+                    t2_5 = time.time()
+                    print(self.page_currently_crawling[3], "adding to frontier took", t2_5 - t1_5)
+
 
         self.driver.quit()
             # time.sleep(1)
@@ -176,7 +198,7 @@ class Crawler(Thread):
         request = self.driver.requests[0]
         self.status_code = request.response.status_code
         self.accessed_time = datetime.now().strftime(TIMESTAMP_FORMAT)
-        html_text = ""
+        html_text = None
 
         # try:
         #     res = requests.get(page_to_crawl_url)
@@ -202,10 +224,13 @@ class Crawler(Thread):
             current_page_type = "PPTX"
         else:
             current_page_type = "HTML"
-            elements_present = EC.presence_of_all_elements_located((By.TAG_NAME, "a"))
-            WebDriverWait(self.driver, 5).until(elements_present)
-            html_text = self.driver.page_source
+            elements_present = EC.presence_of_all_elements_located((By.TAG_NAME, 'a'))
+            try:
+                WebDriverWait(self.driver, 5).until(elements_present)
+            except Exception:
+                print("timeout, url:", page_to_crawl_url,  self.driver.page_source)
 
+            html_text = self.driver.page_source
         self.insert_status_code()
         self.insert_accessed_time()
 
@@ -213,6 +238,7 @@ class Crawler(Thread):
 
     # Find a href attributes on html page
     def gather_links(self):
+
         # Define Browser Options
 
         soup = BeautifulSoup(self.current_page_html, "lxml")
@@ -232,8 +258,8 @@ class Crawler(Thread):
 
             #print("uglyurl: ", current_url, "CANON: ", current_parsed_url_urlcanon, "current_parsed_url: ", current_parsed_url)
 
-            print("DOMAIN", self.site_currently_crawling[1])
-            print("     URL------->", current_url, current_parsed_url.geturl())
+            # print("DOMAIN", self.site_currently_crawling[1])
+            # print("     URL------->", current_url, current_parsed_url.geturl())
 
             links.add(current_parsed_url)
 
@@ -282,17 +308,18 @@ class Crawler(Thread):
 
             # print("current link: ", current_link_url)
 
-            self.lock.acquire()
-            all_sites = db.get_all_sites()
-            all_pages = db.get_all_pages()
-            self.lock.release()
+
+
 
             # Only scrape sites in the gov.si domain
-            if not self.check_if_current_domain_is_allowed(current_link_domain) or \
-                    self.check_page_url_duplicate(all_pages, current_link_url):
+            if not self.check_if_current_domain_is_allowed(current_link_domain):
                 continue
 
             # Only add pages in the allowed domain
+
+            self.lock.acquire()
+            all_sites = db.get_all_sites()
+            all_pages = db.get_all_pages()
 
             # check if the link exists in any of the pages in db
             if not self.check_page_url_duplicate(all_pages, current_link_url):
@@ -308,18 +335,19 @@ class Crawler(Thread):
                     new_site = db.insert_site(current_link_domain, robotstext_content, sitemap_content)
 
                     if self.check_if_page_is_allowed_by_robots_txt(new_site, current_link_url):
-                        self.lock.acquire()
                         new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                   "040521")
-                        self.lock.release()
 
                 else:
                     # existing domain
                     if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
-                        self.lock.acquire()
+
+
+                        #print("inserting", current_link_url)
                         new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                   "040521")
-                        self.lock.release()
+
+            self.lock.release()
 
     def check_if_current_domain_is_allowed(self, domain_netloc):
 
@@ -333,8 +361,7 @@ class Crawler(Thread):
         duplicate_found = False
         for page in all_pages:
 
-            current_page_url_obj = urllib.parse.urlparse(page[3])
-            current_page_url_string = current_page_url_obj.geturl()
+            current_page_url_string = page[3]
 
             if current_page_url_string == link_url:
                 duplicate_found = True
