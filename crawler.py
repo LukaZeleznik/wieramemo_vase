@@ -15,15 +15,18 @@ import random
 import requests
 import os.path
 from hash_tool import HashTool
+from datetime import datetime
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
 TIMEOUT = 5
-PAGE_TYPE_CODES = ["HTML","DUPLICATE","FRONTIER","BINARY"]
-DATA_TYPES = ["DOC","DOCX","PDF","PPT","PPTX"]
+PAGE_TYPE_CODES = ["HTML", "DUPLICATE", "FRONTIER", "BINARY"]
+DATA_TYPES = ["DOC", "DOCX", "PDF", "PPT", "PPTX"]
+TIMESTAMP_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 # Create a global hash tool for page signatures
 hash_tool = HashTool()
+
 
 class Crawler(Thread):
 
@@ -38,6 +41,8 @@ class Crawler(Thread):
         self.page_currently_crawling = None
         self.site_currently_crawling = None
         self.current_page_html = None
+        self.status_code = None
+        self.accessed_time = None
         self.links_to_crawl = []
 
     def stop(self):
@@ -64,7 +69,6 @@ class Crawler(Thread):
 
             self.current_page_html, current_page_type = self.crawl_page()
 
-
             if current_page_type != "HTML":
                 self.insert_page_as_binary(current_page_type)
                 continue
@@ -74,11 +78,14 @@ class Crawler(Thread):
                 print("--------------------> self.page_currently_crawling: ", self.page_currently_crawling[3])
 
                 # If page hash for this page is equal to some other page - update to DUPLICATE
-                if self.handle_duplicate_page():
-                    # TODO: Do not save html_content since this page is a duplicate
+                if not self.handle_duplicate_page():
+                    # If page not a duplicate store its html_content
+                    self.insert_html_content()
                     pass
 
-                self.update_page_hash()
+                self.insert_page_hash()
+                self.insert_status_code()
+                self.insert_accessed_time()
 
                 self.links_to_crawl = self.gather_links()
 
@@ -111,12 +118,14 @@ class Crawler(Thread):
             page_to_crawl_site = db.get_site_by_id(page_to_crawl[1])
 
             # check if the domain can be accessed at current time
-            if hf.can_domain_be_accessed_at_current_time(page_to_crawl_site[1], self.time_accessed, self.time_between_calls):
+            if hf.can_domain_be_accessed_at_current_time(page_to_crawl_site[1], self.time_accessed,
+                                                         self.time_between_calls):
                 # if yes, return page and domain, and mark the page as visited (just change the tag to HTML)
 
                 self.lock.acquire()
                 updated_page = db.update_page_by_id(page_to_crawl[0], page_to_crawl[1], PAGE_TYPE_CODES[0],
-                                                    page_to_crawl[3], page_to_crawl[4], page_to_crawl[5], page_to_crawl[6], page_to_crawl[7])
+                                                    page_to_crawl[3], page_to_crawl[4], page_to_crawl[5],
+                                                    page_to_crawl[6], page_to_crawl[7])
                 self.lock.release()
 
                 page_to_crawl = updated_page
@@ -139,27 +148,28 @@ class Crawler(Thread):
         except Exception:
             return
 
-        if(req.headers['content-type'] == "application/pdf"):
+        if (req.headers['content-type'] == "application/pdf"):
             print("PDF")
             current_page_type = "PDF"
-        elif(req.headers['content-type'] == "application/msword"):
+        elif (req.headers['content-type'] == "application/msword"):
             print("DOC")
             current_page_type = "DOC"
-        elif(req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
+        elif (req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
             print("DOCX")
             current_page_type = "DOCX"
-        elif(req.headers['content-type'] == "application/vnd.ms-powerpoint"):
+        elif (req.headers['content-type'] == "application/vnd.ms-powerpoint"):
             print("PPT")
             current_page_type = "PPT"
-        elif(req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.presentationml.presentation"):
+        elif (req.headers[
+                  'content-type'] == "application/vnd.openxmlformats-officedocument.presentationml.presentation"):
             print("PPTX")
             current_page_type = "PPTX"
         else:
             current_page_type = "HTML"
 
-
-        status_code = req.status_code
-        # print(status_code)
+        # Set status code and accessed time of this page
+        self.status_code = req.status_code
+        self.accessed_time = datetime.now().strftime(TIMESTAMP_FORMAT)
 
         chrome_options = Options()
         chrome_options.add_argument("--headless")  # Hides the browser window
@@ -174,7 +184,6 @@ class Crawler(Thread):
 
         return html_text, current_page_type
 
-
     # Find a href attributes on html page
     def gather_links(self):
         # Define Browser Options
@@ -185,20 +194,18 @@ class Crawler(Thread):
         links = set()
         images = set()
         for link in soup.find_all("a"):
-
             current_url_relative = link.get('href')
 
-            current_url = urllib.parse.urljoin(self.site_currently_crawling[1], current_url_relative)
+            current_url = urllib.parse.urljoin("http://" + self.site_currently_crawling[1], current_url_relative)
 
             current_parsed_url = urllib.parse.urlparse(current_url)
 
-            print("DOMAIN", self.site_currently_crawling[1])
-            print("URL------->", current_url ,current_parsed_url.geturl())
+            #print("DOMAIN", self.site_currently_crawling[1])
+            #print("URL------->", current_url, current_parsed_url.geturl())
 
             links.add(current_parsed_url)
 
         for image in soup.find_all("img"):
-
             current_url_relative = image.get('src')
 
             current_url = urllib.parse.urljoin(self.site_currently_crawling[1], current_url_relative)
@@ -206,8 +213,8 @@ class Crawler(Thread):
             current_parsed_url = urllib.parse.urlparse(current_url)
 
             images.add(current_parsed_url)
-        
-        #print(images)
+
+        # print(images)
 
         for image in images:
             fullurl = urllib.parse.urljoin(self.site_currently_crawling[1], image.geturl())
@@ -226,9 +233,7 @@ class Crawler(Thread):
 
             db.insert_image(self.page_currently_crawling[0], filename, content_type, content, int(time.time()))
 
-
         return list(links)
-
 
     def add_links_to_frontier(self):
         for link in self.links_to_crawl:
@@ -238,7 +243,7 @@ class Crawler(Thread):
             # print("SCHEME: --->", link.scheme)
             current_link_domain = link.scheme + "://" + link.netloc
 
-            #print("current link: ", current_link_url)
+            # print("current link: ", current_link_url)
 
             self.lock.acquire()
             all_sites = db.get_all_sites()
@@ -267,16 +272,17 @@ class Crawler(Thread):
 
                     if self.check_if_page_is_allowed_by_robots_txt(new_site, current_link_url):
                         self.lock.acquire()
-                        new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
+                        new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
+                                                  "040521")
                         self.lock.release()
 
                 else:
                     # existing domain
                     if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
                         self.lock.acquire()
-                        new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200", "040521")
+                        new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
+                                                  "040521")
                         self.lock.release()
-
 
     def check_if_current_domain_is_allowed(self, domain_netloc):
 
@@ -315,19 +321,19 @@ class Crawler(Thread):
         rp = urllib.robotparser.RobotFileParser()
 
         rp.parse(site_obj[2].splitlines())
-        #rp.set_url("http://" + self.site_currently_crawling[1] + "/robots.txt")
-        #rp.read()
+        # rp.set_url("http://" + self.site_currently_crawling[1] + "/robots.txt")
+        # rp.read()
         return rp.can_fetch(USER_AGENT, link_url)
 
-
-    def update_page_hash(self):
+    def insert_page_hash(self):
         # acquire lock
         self.lock.acquire()
         # Calculate hash from html
         hash = hash_tool.create_content_hash(self.current_page_html)
 
         # update hash of a page in db
-        updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1], self.page_currently_crawling[2],
+        updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
+                                            self.page_currently_crawling[2],
                                             self.page_currently_crawling[3], self.page_currently_crawling[4], hash,
                                             self.page_currently_crawling[6], self.page_currently_crawling[7])
         self.page_currently_crawling = updated_page
@@ -359,11 +365,11 @@ class Crawler(Thread):
     def insert_page_as_binary(self, data_type):
         self.lock.acquire()
         db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1], "BINARY",
-            self.page_currently_crawling[3], self.page_currently_crawling[4], self.page_currently_crawling[5],
-            self.page_currently_crawling[6], self.page_currently_crawling[7])
+                             self.page_currently_crawling[3], self.page_currently_crawling[4],
+                             self.page_currently_crawling[5],
+                             self.page_currently_crawling[6], self.page_currently_crawling[7])
 
         db.insert_page_data(self.page_currently_crawling[0], data_type, self.current_page_html)
-
 
     @staticmethod
     def get_robots_and_sitemap_content(new_site):
@@ -371,19 +377,50 @@ class Crawler(Thread):
             robotstxt = requests.get(new_site + "/robots.txt")
         except requests.exceptions.ConnectionError:
             print("Error: ", new_site, " has no robots.txt.")
-            return "",""
+            return "", ""
 
         if robotstxt.status_code != 200:
-            return "",""
+            return "", ""
 
         rp = urllib.robotparser.RobotFileParser()
         rp.set_url(new_site + "/robots.txt")
         rp.read()
         sitemap = rp.site_maps()
 
-        robotstxt_content = robotstxt.content.decode("utf-8") 
-        if sitemap is not None: sitemap_content = requests.get(sitemap[0]).content.decode("utf-8")
-        else: sitemap_content = ""
+        robotstxt_content = robotstxt.content.decode("utf-8")
+        if sitemap is not None:
+            sitemap_content = requests.get(sitemap[0]).content.decode("utf-8")
+        else:
+            sitemap_content = ""
 
         return robotstxt_content, sitemap_content
 
+    def insert_html_content(self):
+        self.lock.acquire()
+        updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
+                                            self.page_currently_crawling[2],
+                                            self.page_currently_crawling[3], self.current_page_html,
+                                            self.page_currently_crawling[5],
+                                            self.page_currently_crawling[6], self.page_currently_crawling[7])
+        self.page_currently_crawling = updated_page
+        self.lock.release()
+
+    def insert_status_code(self):
+        self.lock.acquire()
+        updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
+                                            self.page_currently_crawling[2],
+                                            self.page_currently_crawling[3], self.page_currently_crawling[4],
+                                            self.page_currently_crawling[5],
+                                            self.status_code, self.page_currently_crawling[7])
+        self.page_currently_crawling = updated_page
+        self.lock.release()
+
+    def insert_accessed_time(self):
+        self.lock.acquire()
+        updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
+                                            self.page_currently_crawling[2],
+                                            self.page_currently_crawling[3], self.page_currently_crawling[4],
+                                            self.page_currently_crawling[5],
+                                            self.page_currently_crawling[6], self.accessed_time)
+        self.page_currently_crawling = updated_page
+        self.lock.release()
