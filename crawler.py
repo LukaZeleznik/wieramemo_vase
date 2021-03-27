@@ -121,11 +121,14 @@ class Crawler(Thread):
                     # the page has not yet been crawled, so crawl it
 
                     t1_3 = time.time()
-                    # If page hash for this page is equal to some other page - update to DUPLICATE
-                    if not self.handle_duplicate_page():
+                    # If page is similiar to some other page - update to DUPLICATE and don't store html_content
+                    if self.handle_duplicate_page():
                         # If page not a duplicate store its html_content
-                        self.insert_html_content()
-                        pass
+                        self.insert_page_hash()
+                        continue
+
+                    # Insert html in db
+                    self.insert_html_content()
 
                     self.insert_page_hash()
                     t2_3 = time.time()
