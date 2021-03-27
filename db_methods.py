@@ -13,7 +13,7 @@ def insert_site(domain, robots, sitemap):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "INSERT INTO crawldb.site(domain, robots_content, sitemap_content) VALUES (%s,%s,%s) RETURNING *"
+    query = "INSERT INTO crawldb.site(domain, robots_content, sitemap_content) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING RETURNING *"
     data_to_insert = (domain, robots, sitemap)
     cur.execute(query, data_to_insert)
     conn.commit()
@@ -97,7 +97,7 @@ def insert_page(site_id, page_type_code, url, html_content, hash_content, http_s
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "INSERT INTO crawldb.page(site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING *"
+    query = "INSERT INTO crawldb.page(site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING RETURNING *"
     data_to_insert = (site_id, page_type_code, url, html_content, hash_content, http_status_code, accessed_time)
     cur.execute(query, data_to_insert)
     conn.commit()
@@ -198,7 +198,7 @@ def insert_image(page_id, filename, content_type, data, accessed_time):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "INSERT INTO crawldb.image(page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, to_timestamp(%s)) RETURNING *"
+    query = "INSERT INTO crawldb.image(page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, to_timestamp(%s)) ON CONFLICT DO NOTHING RETURNING *"
     data_to_insert = (page_id, filename, content_type, data, accessed_time)
     cur.execute(query, data_to_insert)
     conn.commit()
@@ -282,7 +282,7 @@ def insert_page_data(page_id, data_type_code, data):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "INSERT INTO crawldb.page_data(page_id, data_type_code, data) VALUES (%s, %s, %s) RETURNING *"
+    query = "INSERT INTO crawldb.page_data(page_id, data_type_code, data) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING RETURNING *"
     data_to_insert = (page_id, data_type_code, data)
     cur.execute(query, data_to_insert)
     conn.commit()
@@ -366,7 +366,7 @@ def insert_link(from_page_id, to_page_id):
     conn = psycopg2.connect(CONN_DATA)
     cur = conn.cursor()
 
-    query = "INSERT INTO crawldb.link(from_page, to_page) VALUES (%s, %s) RETURNING *"
+    query = "INSERT INTO crawldb.link(from_page, to_page) VALUES (%s, %s) ON CONFLICT DO NOTHING RETURNING *"
     data_to_insert = (from_page_id, to_page_id)
     cur.execute(query, data_to_insert)
     conn.commit()

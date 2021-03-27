@@ -6,7 +6,7 @@ import helper_functions as hf
 import time
 import db_methods as db
 import urllib.request, urllib.robotparser, urllib.parse
-import run_this_if_you_want_to_clear_db
+#import run_this_if_you_want_to_clear_db
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context

@@ -94,7 +94,7 @@ class Crawler(Thread):
             self.page_currently_crawling = page_to_crawl
             self.site_currently_crawling = page_to_crawl_site
 
-            print(self.page_currently_crawling[3], "finding url took", t2_1 - t1_1)
+            #print(self.page_currently_crawling[3], "finding url took", t2_1 - t1_1)
 
             # check if there is a page available to crawl
 
@@ -205,7 +205,6 @@ class Crawler(Thread):
         # except Exception:
         #     print("url", page_to_crawl_url, "is not working")
         #     return None, None
-
         if (request.response.headers['content-type'] == "application/pdf"):
             print("PDF")
             current_page_type = "PDF"
@@ -256,6 +255,9 @@ class Crawler(Thread):
 
             current_parsed_url = urllib.parse.urlparse(current_url)
 
+            if(current_parsed_url.scheme != "http" and current_parsed_url.scheme !=  "https"):
+                continue
+
             #print("uglyurl: ", current_url, "CANON: ", current_parsed_url_urlcanon, "current_parsed_url: ", current_parsed_url)
 
             # print("DOMAIN", self.site_currently_crawling[1])
@@ -266,7 +268,19 @@ class Crawler(Thread):
         onclicks = soup.find_all(attrs={'onclick': True})
 
         if len(onclicks) > 0:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", onclicks)
+            for onclick in onclicks:
+                x = onclick.find("location=")
+                onclick_split = onclick.split(onclick[x+9])
+                for index, string in enumerate(onclick_split):
+                    if "location=" in string:
+                        loc = onclick_split[index+1]
+                        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", loc)
+                        current_url = urllib.parse.urljoin(self.site_currently_crawling[1], loc)
+                        current_parsed_url_urlcanon = urlcanon.parse_url(current_url)
+                        urlcanon.whatwg(current_parsed_url_urlcanon)
+                        current_parsed_url = urllib.parse.urlparse(current_url)
+                        links.add(current_parsed_url)
+                        break
 
         for image in soup.find_all("img"):
             current_url_relative = image.get('src')
@@ -337,6 +351,7 @@ class Crawler(Thread):
                     if self.check_if_page_is_allowed_by_robots_txt(new_site, current_link_url):
                         new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                   "040521")
+                        db.insert_link(self.page_currently_crawling[0],new_page[0])
 
                 else:
                     # existing domain
@@ -357,6 +372,7 @@ class Crawler(Thread):
 
     def check_page_url_duplicate(self, all_pages, link_url):
         # check if page url already exists in db
+        return False
 
         duplicate_found = False
         for page in all_pages:
