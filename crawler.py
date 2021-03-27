@@ -269,19 +269,23 @@ class Crawler(Thread):
 
         if len(onclicks) > 0:
             for onclick in onclicks:
-                x = onclick.find("location=")
-                if(x < 0): continue
-                onclick_split = onclick.split(onclick[x+9])
-                for index, string in enumerate(onclick_split):
-                    if "location=" in string:
-                        loc = onclick_split[index+1]
-                        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", loc)
-                        current_url = urllib.parse.urljoin(self.site_currently_crawling[1], loc)
-                        current_parsed_url_urlcanon = urlcanon.parse_url(current_url)
-                        urlcanon.whatwg(current_parsed_url_urlcanon)
-                        current_parsed_url = urllib.parse.urlparse(current_url)
-                        links.add(current_parsed_url)
-                        break
+                try:
+                    x = onclick.find("location=")
+                    if(x < 0): continue
+                    onclick_split = onclick.split(onclick[x+9])
+                    for index, string in enumerate(onclick_split):
+                        if "location=" in string:
+                            loc = onclick_split[index+1]
+                            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", loc)
+                            current_url = urllib.parse.urljoin(self.site_currently_crawling[1], loc)
+                            current_parsed_url_urlcanon = urlcanon.parse_url(current_url)
+                            urlcanon.whatwg(current_parsed_url_urlcanon)
+                            current_parsed_url = urllib.parse.urlparse(current_url)
+                            links.add(current_parsed_url)
+                            break
+                except Exception:
+                    continue
+                
 
         for image in soup.find_all("img"):
             current_url_relative = image.get('src')
