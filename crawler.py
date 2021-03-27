@@ -336,9 +336,9 @@ class Crawler(Thread):
 
             # Only add pages in the allowed domain
 
-            self.lock.acquire()
-            all_sites = db.get_all_sites()
-            all_pages = db.get_all_pages()
+            #self.lock.acquire()
+            #all_sites = db.get_all_sites()
+            #all_pages = db.get_all_pages()
 
             # check if the link exists in any of the pages in db
             if not self.check_page_url_duplicate(all_pages, current_link_url):
@@ -367,7 +367,7 @@ class Crawler(Thread):
                         new_page = db.insert_page(domain_id, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                   "040521")
 
-            self.lock.release()
+            #self.lock.release()
 
     def check_if_current_domain_is_allowed(self, domain_netloc):
 
@@ -415,7 +415,7 @@ class Crawler(Thread):
 
     def insert_page_hash(self):
         # acquire lock
-        self.lock.acquire()
+        #self.lock.acquire()
         # Calculate hash from html
         hash = hash_tool.create_content_hash(self.current_page_html)
 
@@ -425,12 +425,12 @@ class Crawler(Thread):
                                             self.page_currently_crawling[3], self.page_currently_crawling[4], hash,
                                             self.page_currently_crawling[6], self.page_currently_crawling[7])
         self.page_currently_crawling = updated_page
-        self.lock.release()
+        #self.lock.release()
 
     # Returns true if hash calculated from page html already exists in db. Also marks page as "DUPLICATE" in db
     def handle_duplicate_page(self):
         # acquire lock
-        self.lock.acquire()
+        #self.lock.acquire()
 
         # Hash of a passed html_content
         h = hash_tool.create_content_hash(self.current_page_html)
@@ -444,21 +444,21 @@ class Crawler(Thread):
                                                 self.page_currently_crawling[6], self.page_currently_crawling[7])
             self.page_currently_crawling = updated_page
             print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
-            self.lock.release()
+            #self.lock.release()
             return True
         else:
-            self.lock.release()
+            #self.lock.release()
             return False
 
     def insert_page_as_binary(self, data_type):
-        self.lock.acquire()
+        #self.lock.acquire()
         db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1], "BINARY",
                              self.page_currently_crawling[3], self.page_currently_crawling[4],
                              self.page_currently_crawling[5],
                              self.page_currently_crawling[6], self.page_currently_crawling[7])
 
         db.insert_page_data(self.page_currently_crawling[0], data_type, None)
-        self.lock.release()
+        #self.lock.release()
 
     @staticmethod
     def get_robots_and_sitemap_content(new_site):
@@ -485,31 +485,31 @@ class Crawler(Thread):
         return robotstxt_content, sitemap_content
 
     def insert_html_content(self):
-        self.lock.acquire()
+        #self.lock.acquire()
         updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
                                             self.page_currently_crawling[2],
                                             self.page_currently_crawling[3], self.current_page_html,
                                             self.page_currently_crawling[5],
                                             self.page_currently_crawling[6], self.page_currently_crawling[7])
         self.page_currently_crawling = updated_page
-        self.lock.release()
+        #self.lock.release()
 
     def insert_status_code(self):
-        self.lock.acquire()
+        #self.lock.acquire()
         updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
                                             self.page_currently_crawling[2],
                                             self.page_currently_crawling[3], self.page_currently_crawling[4],
                                             self.page_currently_crawling[5],
                                             self.status_code, self.page_currently_crawling[7])
         self.page_currently_crawling = updated_page
-        self.lock.release()
+        #self.lock.release()
 
     def insert_accessed_time(self):
-        self.lock.acquire()
+        #self.lock.acquire()
         updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
                                             self.page_currently_crawling[2],
                                             self.page_currently_crawling[3], self.page_currently_crawling[4],
                                             self.page_currently_crawling[5],
                                             self.page_currently_crawling[6], self.accessed_time)
         self.page_currently_crawling = updated_page
-        self.lock.release()
+        #self.lock.release()
