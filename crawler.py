@@ -33,6 +33,7 @@ TIMEOUT = 5
 PAGE_TYPE_CODES = ["HTML", "DUPLICATE", "FRONTIER", "BINARY"]
 DATA_TYPES = ["DOC", "DOCX", "PDF", "PPT", "PPTX"]
 TIMESTAMP_FORMAT = '%Y-%m-%d %H:%M:%S'
+MAX_HTML_SIMILARITY = 0.99
 
 # Create a global hash tool for page signatures
 hash_tool = HashTool()
@@ -450,6 +451,50 @@ class Crawler(Thread):
             self.lock.release()
             return True
         else:
+            self.lock.release()
+            return False
+
+    # Returns true if hash calculated from page html already exists in db. Also marks page as "DUPLICATE" in db
+    def handle_duplicate_page(self):
+        # acquire lock
+        self.lock.acquire()
+
+        # Hash of a passed html_content
+        h = hash_tool.create_content_hash(self.current_page_html)
+
+        # Check if page is exact copy of already parsed documents in database
+        returned_duplicate = db.find_page_duplicate(h)
+        if returned_duplicate and returned_duplicate[3] != self.page_currently_crawling[3]:
+            # Update page as 'DUPLICATE'
+            updated_page = db.update_page_by_id(self.page_currently_crawling[0], self.page_currently_crawling[1],
+                                                PAGE_TYPE_CODES[1], self.page_currently_crawling[3],
+                                                self.page_currently_crawling[4], self.page_currently_crawling[5],
+                                                self.page_currently_crawling[6], self.page_currently_crawling[7])
+            self.page_currently_crawling = updated_page
+            print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
+            self.lock.release()
+            return True
+        else:
+            # Calculate similarity html_content with others
+            all_crawled_pages = db.get_all_crawled_pages()
+            for page in all_crawled_pages:
+                if page[4] and self.current_page_html is not None and page[3] != self.page_currently_crawling[3]:
+                    similarity = hash_tool.calculate_similarity(self.current_page_html, page[4])
+                    # print("PAGE: " , self.page_currently_crawling[3] , " and ", page[3], " SIMILARITY: ",
+                    #     hash_tool.calculate_similarity(self.current_page_html, page[4]))
+                    if similarity > MAX_HTML_SIMILARITY:
+                        updated_page = db.update_page_by_id(self.page_currently_crawling[0],
+                                                            self.page_currently_crawling[1],
+                                                            PAGE_TYPE_CODES[1], self.page_currently_crawling[3],
+                                                            self.page_currently_crawling[4],
+                                                            self.page_currently_crawling[5],
+                                                            self.page_currently_crawling[6],
+                                                            self.page_currently_crawling[7])
+                        self.page_currently_crawling = updated_page
+                        print("Page ", self.page_currently_crawling[3], "is a DUPLICATE ALMOST: ", page[3],
+                              " similarity ", similarity)
+                        self.lock.release()
+                        return True
             self.lock.release()
             return False
 
