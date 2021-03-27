@@ -322,6 +322,7 @@ class Crawler(Thread):
         return list(links)
 
     def add_links_to_frontier(self):
+        print("self.links_to_crawl: ", len(self.links_to_crawl))
         for link in self.links_to_crawl:
 
             current_link_url = link.geturl()
