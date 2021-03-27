@@ -150,9 +150,9 @@ class Crawler(Thread):
     def get_page_to_crawl(self):
         while True:
             # acquire lock
-            self.lock.acquire()
+
             all_pages = db.get_all_pages()
-            self.lock.release()
+
 
             # find first page that has the tag frontier
             page_to_crawl = None
@@ -169,8 +169,9 @@ class Crawler(Thread):
             page_to_crawl_site = db.get_site_by_id(page_to_crawl[1])
 
             # check if the domain can be accessed at current time
-            if hf.can_domain_be_accessed_at_current_time(page_to_crawl_site[1], self.time_accessed,
-                                                         self.time_between_calls):
+            how_long_to_wait = hf.how_long_to_wait(page_to_crawl_site[1], self.time_accessed, self.time_between_calls)
+
+            if how_long_to_wait == 0:
                 # if yes, return page and domain, and mark the page as visited (just change the tag to HTML)
 
                 self.lock.acquire()
@@ -184,9 +185,8 @@ class Crawler(Thread):
                 return page_to_crawl, page_to_crawl_site
 
             else:
-                # if no, then wait for a random time
-                random_wait = random.uniform(0, self.time_between_calls)
-                time.sleep(random_wait)
+
+                time.sleep(how_long_to_wait)
 
     # visit a page and return its content html
     def crawl_page(self):

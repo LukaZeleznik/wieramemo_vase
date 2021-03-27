@@ -21,6 +21,23 @@ def can_domain_be_accessed_at_current_time(domain_url, time_accessed, time_betwe
     # if not enough time has passed, we cannot
     return False
 
+def how_long_to_wait(domain_url, time_accessed, time_between_calls):
+    current_time = int(time.time())
+
+    # if domain url has not yet been accessed, we can access it right away
+    if domain_url not in time_accessed:
+        time_accessed[domain_url] = current_time
+        return 0
+
+    # else, we have to check if the appropriate amount of time has passed
+    if current_time >= time_accessed[domain_url] + time_between_calls:
+        # if enough time has passed, we can acces the domain
+        time_accessed[domain_url] = current_time
+        return 0
+
+    # if not enough time has passed, we cannot
+    return time_accessed[domain_url] + time_between_calls  - current_time
+
 def wait5sDelay(domain_name, time_accessed, lock):
     if domain_name not in time_accessed:
         time_accessed[domain_name] = 0    
