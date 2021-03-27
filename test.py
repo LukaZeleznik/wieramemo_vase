@@ -1,21 +1,21 @@
 import urllib.robotparser
 import requests
 
-iz_baze = '''User-agent: *
-Disallow: /admin
-Disallow: /resources
-Disallow: /pomoc
-
-Sitemap: https://www.gov.si/sitemap.xml
-
-
-'''
-
- 
-rp = urllib.robotparser.RobotFileParser()
-rp.parse(iz_baze.splitlines())
-print(rp.site_maps())
-print(rp.can_fetch("*", "https://www.gov.si/admin"))
+# iz_baze = '''User-agent: *
+# Disallow: /admin
+# Disallow: /resources
+# Disallow: /pomoc
+#
+# Sitemap: https://www.gov.si/sitemap.xml
+#
+#
+# '''
+#
+#
+# rp = urllib.robotparser.RobotFileParser()
+# rp.parse(iz_baze.splitlines())
+# print(rp.site_maps())
+# print(rp.can_fetch("*", "https://www.gov.si/admin"))
 
 #sitemap = rp.site_maps()
 
@@ -24,3 +24,5 @@ print(rp.can_fetch("*", "https://www.gov.si/admin"))
 #else: sitemap = ""
 
 #print(rp.read())
+
+

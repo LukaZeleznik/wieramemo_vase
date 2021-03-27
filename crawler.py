@@ -1,12 +1,12 @@
 from requests.models import MissingSchema
-from selenium import webdriver
+
 from selenium.webdriver.chrome.options import Options
 import time
 from bs4 import BeautifulSoup
 from urllib import parse
 import urllib.request, urllib.robotparser, urllib.parse
 import helper_functions as hf
-import selenium
+
 import lxml
 from threading import Thread
 import threading
@@ -16,7 +16,16 @@ import requests
 import os.path
 from hash_tool import HashTool
 from datetime import datetime
+
 import urlcanon
+
+import re
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+from seleniumwire import webdriver
+
 
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
 USER_AGENT = 'fri-wier-wieramemo-vase'
@@ -45,6 +54,24 @@ class Crawler(Thread):
         self.status_code = None
         self.accessed_time = None
         self.links_to_crawl = []
+
+        chrome_options = Options()
+
+        prefs = {
+            "download.open_pdf_in_system_reader": False,
+            "download.prompt_for_download": True,
+            "download.default_directory": "/dev/null",
+            "plugins.always_open_pdf_externally": False
+        }
+        chrome_options.add_experimental_option(
+            "prefs", prefs
+        )
+
+        chrome_options.add_argument("--headless")  # Hides the browser window
+        chrome_options.add_argument(USER_AGENT)
+        self.driver = webdriver.Chrome(options=chrome_options)
+
+
 
     def stop(self):
         self.running = False
@@ -95,6 +122,7 @@ class Crawler(Thread):
                     # if any links are found, add them to the frontier
                     self.add_links_to_frontier()
 
+        self.driver.quit()
             # time.sleep(1)
 
     def get_page_to_crawl(self):
@@ -143,50 +171,43 @@ class Crawler(Thread):
 
         # Check if url has already been crawled
         page_to_crawl_url = self.page_currently_crawling[3]
+        self.driver.get(page_to_crawl_url)
 
-        try:
-            req = requests.get(page_to_crawl_url)
-        except Exception:
-            print("url", page_to_crawl_url, "is not working")
-            return None, None
+        request = self.driver.requests[0]
+        self.status_code = request.response.status_code
+        self.accessed_time = datetime.now().strftime(TIMESTAMP_FORMAT)
+        html_text = ""
 
-        if (req.headers['content-type'] == "application/pdf"):
+        # try:
+        #     res = requests.get(page_to_crawl_url)
+        # except Exception:
+        #     print("url", page_to_crawl_url, "is not working")
+        #     return None, None
+
+        if (request.response.headers['content-type'] == "application/pdf"):
             print("PDF")
             current_page_type = "PDF"
-        elif (req.headers['content-type'] == "application/msword"):
+        elif (request.response.headers['content-type'] == "application/msword"):
             print("DOC")
             current_page_type = "DOC"
-        elif (req.headers['content-type'] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
+        elif (request.response.headers['content-type'] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
             print("DOCX")
             current_page_type = "DOCX"
-        elif (req.headers['content-type'] == "application/vnd.ms-powerpoint"):
+        elif (request.response.headers['content-type'] == "application/vnd.ms-powerpoint"):
             print("PPT")
             current_page_type = "PPT"
-        elif (req.headers[
+        elif (request.response.headers[
                   'content-type'] == "application/vnd.openxmlformats-officedocument.presentationml.presentation"):
             print("PPTX")
             current_page_type = "PPTX"
         else:
             current_page_type = "HTML"
+            elements_present = EC.presence_of_all_elements_located((By.TAG_NAME, "a"))
+            WebDriverWait(self.driver, 5).until(elements_present)
+            html_text = self.driver.page_source
 
-        # Set status code and accessed time of this page
-        self.status_code = req.status_code
-        self.accessed_time = datetime.now().strftime(TIMESTAMP_FORMAT)
-        # Update it in the db
         self.insert_status_code()
         self.insert_accessed_time()
-
-
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")  # Hides the browser window
-        chrome_options.add_argument(USER_AGENT)
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.get(page_to_crawl_url)
-
-        # Not sure what timeout does
-        time.sleep(TIMEOUT)
-        html_text = driver.page_source
-        driver.quit()
 
         return html_text, current_page_type
 
@@ -211,7 +232,15 @@ class Crawler(Thread):
 
             #print("uglyurl: ", current_url, "CANON: ", current_parsed_url_urlcanon, "current_parsed_url: ", current_parsed_url)
 
+            print("DOMAIN", self.site_currently_crawling[1])
+            print("     URL------->", current_url, current_parsed_url.geturl())
+
             links.add(current_parsed_url)
+
+        onclicks = soup.find_all(attrs={'onclick': True})
+
+        if len(onclicks) > 0:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", onclicks)
 
         for image in soup.find_all("img"):
             current_url_relative = image.get('src')
@@ -380,7 +409,8 @@ class Crawler(Thread):
                              self.page_currently_crawling[5],
                              self.page_currently_crawling[6], self.page_currently_crawling[7])
 
-        db.insert_page_data(self.page_currently_crawling[0], data_type, self.current_page_html)
+        db.insert_page_data(self.page_currently_crawling[0], data_type, None)
+        self.lock.release()
 
     @staticmethod
     def get_robots_and_sitemap_content(new_site):

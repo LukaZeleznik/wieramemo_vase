@@ -51,5 +51,13 @@ def create_workers():
 insert_seed_urls_into_db()
 create_workers()
 
+
 while True:
-    time.sleep(1)
+    time.sleep(10)
+    threads_alive = 0
+    for thread in crawler_threads:
+        if thread.is_alive():
+            threads_alive += 1
+    print("threads alive:", threads_alive)
+
+
