@@ -178,11 +178,11 @@ class Crawler(Thread):
             if how_long_to_wait == 0:
                 # if yes, return page and domain, and mark the page as visited (just change the tag to HTML)
 
-                self.lock.acquire()
+                #self.lock.acquire()
                 updated_page = db.update_page_by_id(page_to_crawl[0], page_to_crawl[1], PAGE_TYPE_CODES[0],
                                                     page_to_crawl[3], page_to_crawl[4], page_to_crawl[5],
                                                     page_to_crawl[6], page_to_crawl[7])
-                self.lock.release()
+                #self.lock.release()
 
                 page_to_crawl = updated_page
 
@@ -362,7 +362,7 @@ class Crawler(Thread):
                     new_page = db.insert_page(new_site[0], PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                 "040521")
                     db.insert_link(self.page_currently_crawling[0],new_page[0])
-                    print("inserting new page new domain")
+                    #print("inserting new page new domain")
             else:
                 # existing domain
                 if self.check_if_page_is_allowed_by_robots_txt(self.site_currently_crawling, current_link_url):
@@ -371,7 +371,7 @@ class Crawler(Thread):
                     #print("inserting", current_link_url)
                     new_page = db.insert_page(domain_id_or_false, PAGE_TYPE_CODES[2], current_link_url, "", "", "200",
                                                 "040521")
-                    print("inserting new page")
+                    #print("inserting new page")
 
             #self.lock.release()
 
@@ -459,7 +459,7 @@ class Crawler(Thread):
     # Returns true if hash calculated from page html already exists in db. Also marks page as "DUPLICATE" in db
     def handle_duplicate_page(self):
         # acquire lock
-        self.lock.acquire()
+        #self.lock.acquire()
 
         # Hash of a passed html_content
         h = hash_tool.create_content_hash(self.current_page_html)
@@ -474,7 +474,7 @@ class Crawler(Thread):
                                                 self.page_currently_crawling[6], self.page_currently_crawling[7])
             self.page_currently_crawling = updated_page
             print("Page ", self.page_currently_crawling[3], "is a DUPLICATE")
-            self.lock.release()
+            #self.lock.release()
             return True
         """ else:
             # Calculate similarity html_content with others
