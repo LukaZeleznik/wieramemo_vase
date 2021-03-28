@@ -194,16 +194,18 @@ class Crawler(Thread):
 
     # visit a page and return its content html
     def crawl_page(self):
-
         # Check if url has already been crawled
         page_to_crawl_url = self.page_currently_crawling[3]
         self.driver.get(page_to_crawl_url)
 
-        request = self.driver.requests[0]
+        #request = self.driver.requests[0]
+        for request_iter in self.driver.requests:
+            if request_iter.response:
+                request = request_iter
+
         self.status_code = request.response.status_code
         self.accessed_time = datetime.now().strftime(TIMESTAMP_FORMAT)
         html_text = None
-
         # try:
         #     res = requests.get(page_to_crawl_url)
         # except Exception:
@@ -236,7 +238,6 @@ class Crawler(Thread):
             html_text = self.driver.page_source
         self.insert_status_code()
         self.insert_accessed_time()
-
         return html_text, current_page_type
 
     # Find a href attributes on html page
@@ -450,7 +451,7 @@ class Crawler(Thread):
                                                 PAGE_TYPE_CODES[1], self.page_currently_crawling[3],
                                                 self.page_currently_crawling[4], self.page_currently_crawling[5],
                                                 self.page_currently_crawling[6], self.page_currently_crawling[7])
-            self.page_currently_crawling = updated_page
+            #self.page_currently_crawling = updated_page
             print("Page ", self.page_currently_crawling[3], "is a DUPLICATE from", returned_duplicate[3])
 
             # Save a new link: to_page is set to duplicate version
