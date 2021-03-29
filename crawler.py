@@ -451,7 +451,7 @@ class Crawler(Thread):
                                                 PAGE_TYPE_CODES[1], self.page_currently_crawling[3],
                                                 self.page_currently_crawling[4], self.page_currently_crawling[5],
                                                 self.page_currently_crawling[6], self.page_currently_crawling[7])
-            #self.page_currently_crawling = updated_page
+            self.page_currently_crawling = updated_page
             print("Page ", self.page_currently_crawling[3], "is a DUPLICATE from", returned_duplicate[3])
 
             # Save a new link: to_page is set to duplicate version
