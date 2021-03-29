@@ -13,7 +13,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 USER_AGENT = 'fri-wier-wieramemo-vase'
 SEED_URLS = ['http://gov.si', 'http://evem.gov.si', 'http://e-uprava.gov.si', 'http://e-prostor.gov.si']
-NUMBER_OF_THREADS = 10
+NUMBER_OF_THREADS = 5
 PAGE_TYPE_CODES = ["HTML","DUPLICATE","FRONTIER","BINARY"]
 DATA_TYPES = ["DOC","DOCX","PDF","PPT","PPTX"]
 
@@ -58,6 +58,8 @@ while True:
     for thread in crawler_threads:
         if thread.is_alive():
             threads_alive += 1
+    if(threads_alive < 2):
+        create_workers()
     print("threads alive:", threads_alive)
 
 

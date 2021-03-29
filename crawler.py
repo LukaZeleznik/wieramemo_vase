@@ -178,11 +178,11 @@ class Crawler(Thread):
             if how_long_to_wait == 0:
                 # if yes, return page and domain, and mark the page as visited (just change the tag to HTML)
 
-                #self.lock.acquire()
+                self.lock.acquire()
                 updated_page = db.update_page_by_id(page_to_crawl[0], page_to_crawl[1], PAGE_TYPE_CODES[0],
                                                     page_to_crawl[3], page_to_crawl[4], page_to_crawl[5],
                                                     page_to_crawl[6], page_to_crawl[7])
-                #self.lock.release()
+                self.lock.release()
 
                 page_to_crawl = updated_page
 
@@ -451,7 +451,7 @@ class Crawler(Thread):
                                                 PAGE_TYPE_CODES[1], self.page_currently_crawling[3],
                                                 self.page_currently_crawling[4], self.page_currently_crawling[5],
                                                 self.page_currently_crawling[6], self.page_currently_crawling[7])
-            #self.page_currently_crawling = updated_page
+            self.page_currently_crawling = updated_page
             print("Page ", self.page_currently_crawling[3], "is a DUPLICATE from", returned_duplicate[3])
 
             # Save a new link: to_page is set to duplicate version
