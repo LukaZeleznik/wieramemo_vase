@@ -113,6 +113,40 @@ def extract_with_xpath_rtv(page_html):
     json_data_record = json.dumps(data_record, ensure_ascii=False)
     return json_data_record
 
+def extract_with_xpath_24ur():
+    pass
+
+def extract_with_xpath_bolha(page_html):
+
+    title = location = price = published_time = ""
+
+    document_tree = html.fromstring(page_html)
+
+    titles = document_tree.xpath('//*[@id="form_browse_detailed_search"]/div/div[1]/div[6]/div[4]/ul/li[*]/article/h3/a/text()')
+
+    print("titles: (", len(titles), ")")
+    print(titles)
+
+    locations = document_tree.xpath('//*[@id="form_browse_detailed_search"]/div/div[1]/div[6]/div[4]/ul/li[*]/article/div[2]/div/text()')
+    locations_new = []
+    for location in locations:
+        if location[0] != "\n":
+            locations_new.append(location)
+    locations = locations_new
+
+    print("locations: (", len(locations), ")")
+    print(locations)
+
+    prices = document_tree.xpath('//*[@id="form_browse_detailed_search"]/div/div[1]/div[6]/div[4]/ul/li[*]/article/div[7]/ul/li/strong/text()')
+    prices_new = []
+    for price in prices:
+        prices_new.append(price)
+    prices = prices_new
+
+    print("prices: (", len(prices), ")")
+    print(prices)
+
+    return ""
 
 if __name__ == "__main__":
 
@@ -121,6 +155,9 @@ if __name__ == "__main__":
 
     overstock_html_names = ["jewelry01.html", "jewelry02.html"]
 
+    bolha_html_names = ["Oddaja sob _ Najem sob - Nepremičnine bolha.com.html", "Analogni fotoaparati.html"]
+
+
     for rtv_html_name in rtv_html_names:
         f = codecs.open("../input-extraction/rtvslo.si/" + rtv_html_name, 'r', encoding='utf-8')
         page_html = f.read()
@@ -128,8 +165,13 @@ if __name__ == "__main__":
         print(rtv_html_name + ":", extracted_data)
 
     for overstock_html_name in overstock_html_names:
-        f = codecs.open("../input-extraction/overstock.com/" + overstock_html_name, 'r', encoding='iso-8859-1',)
+        f = codecs.open("../input-extraction/overstock.com/" + overstock_html_name, 'r', encoding='iso-8859-1')
         page_html = f.read()
         extracted_data = extract_with_xpath_overstock(page_html)
         print(overstock_html_name + ":", extracted_data)
 
+    # for bolha_html_name in bolha_html_names:
+    #     f = codecs.open("../input-extraction/bolha.com/" + bolha_html_name, 'r', encoding='utf-8')
+    #     page_html = f.read()
+    #     extracted_data = extract_with_xpath_bolha(page_html)
+    #     print(bolha_html_name + ":", extracted_data)

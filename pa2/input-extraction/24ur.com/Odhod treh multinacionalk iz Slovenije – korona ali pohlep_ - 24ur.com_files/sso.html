@@ -1,0 +1,96 @@
+
+<!-- saved from url=(0040)https://www.24ur.com/assets/sso.html?v=5 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+    <body>
+        <script>
+            function getParameterByName(name, url) {
+                if (!url) url = window.location.href;
+                name = name.replace(/[\[\]]/g, '\\$&');
+                var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                    results = regex.exec(url);
+                if (!results) return null;
+                if (!results[2]) return '';
+                return decodeURIComponent(results[2].replace(/\+/g, ' '));
+            }
+
+            var redirect = getParameterByName('redirect');
+
+            if (redirect) {
+                var token = getParameterByName('token');
+
+                setCookie('sso_jwt', token);
+                window.location.href = redirect;
+            }
+
+            window.onmessage = function(message) {
+                if (!message.data.hasOwnProperty('type')) {
+                    return;
+                }
+
+                if (message.data.type === 'SSO_GET') {
+                    checkCookie(message.origin);
+                }
+
+                if (message.data.type === 'SSO_FULL') {
+                    checkSSO(message.origin, message.data);
+                }
+            }
+
+            function checkSSO(origin, data) {
+                window.parent.postMessage({
+                    type: 'SSO_FULL',
+                    jwt: getCookie('sso_jwt'),
+                    deviceId: getDeviceId(data.deviceId),
+                }, origin);
+            }
+
+            function getDeviceId(sentDeviceId) {
+                var currentDeviceId = getCookie('device-id');
+
+                if (!currentDeviceId && sentDeviceId) {
+                    setCookie('device-id', sentDeviceId);
+                    currentDeviceId = sentDeviceId;
+                }
+
+                return currentDeviceId;
+            }
+
+            function checkCookie(origin) {
+                window.parent.postMessage(getCookie('sso_jwt'), origin);
+            }
+
+            function setCookie(name, value) {
+                var secure = window.location.protocol === 'http:' ? '' : '; secure';
+
+                if (value) {
+                    var d = new Date();
+                    d.setTime(d.getTime() + (356*24*60*60*1000));
+
+                    document.cookie = name + "=" + value + "; expires=" + d.toUTCString() + "; path=/; samesite=None" + secure;
+                } else {
+                    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; samesite=None" + secure;
+                }
+            }
+
+            function getCookie(cname) {
+                var name = cname + "=";
+                var decodedCookie = decodeURIComponent(document.cookie);
+                var ca = decodedCookie.split(';');
+                for(var i = 0; i <ca.length; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0) == ' ') {
+                        c = c.substring(1);
+                    }
+
+                    if (c.indexOf(name) == 0) {
+                        return c.substring(name.length, c.length);
+                    }
+                }
+
+                return "";
+            }
+        </script>
+    
+
+</body></html>
