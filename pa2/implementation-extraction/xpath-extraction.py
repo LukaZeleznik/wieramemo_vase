@@ -147,8 +147,7 @@ def extract_with_xpath_imdb(page_html):
 
     ratings = document_tree.xpath('//tbody[@class="lister-list"]/tr[*]/td[3]/strong/text()')
 
-    # print("ratings: (", len(ratings), ")")
-    # print(ratings)
+ 
 
     data_records = []
 
