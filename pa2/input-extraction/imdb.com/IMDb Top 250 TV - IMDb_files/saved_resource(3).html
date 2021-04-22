@@ -1,0 +1,73 @@
+
+<!-- saved from url=(0014)about:internet -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"></head><body marginwidth="0" marginheight="0"><style>body{background:transparent;}</style><script type="data-doubleclick" src="./blank_pixel._V137875076_.gif"></script> <script>document.defaultAd = {h:250,w:300}; document.ad = document.defaultAd;</script>
+<script id="video-event-handlers">
+ (function(window, document) {
+ let SLOT_NAME = 'top_rhs';
+ let videoTargetMap = new Map(); 
+ let validPlayIndicatorEvents = ['loadstart', 'play'];
+
+ function makeId() {
+ return Math.random().toString(36).substr(2, 16);
+ }
+
+ function handleVideoEvent(event) {
+ let videoTarget = event.target;
+ let eventType = event.type;
+ let timestamp = Date.now();
+
+ if (videoTarget.nodeName !== 'VIDEO' || videoTarget.loop) {
+ return;
+ }
+
+ if (!videoTargetMap.has(videoTarget)) {
+ let id = makeId();
+ videoTargetMap.set(videoTarget, {
+ id: id
+ });
+ videoTarget.id = id;
+ }
+
+ let videoTargetEventMap = videoTargetMap.get(videoTarget);
+ videoTargetEventMap[eventType] = timestamp;
+
+ if (eventType === 'ended') {
+ let firedEvents = Object.keys(videoTargetEventMap);
+ let hasMatchingPlayEvent = firedEvents.some(function(evt) {
+ return validPlayIndicatorEvents.includes(evt);
+ });
+ if (!hasMatchingPlayEvent) return;
+ }
+
+ let evt = {
+ type: eventType,
+ dispatcher: 'video-handler',
+ documentAdString: JSON.stringify(document.ad),
+ slotName: SLOT_NAME,
+ targetElementId: videoTargetEventMap.id,
+ timestamp: timestamp
+ };
+
+ parent.postMessage(evt, parent.origin);
+ }
+
+ document.addEventListener('loadstart', handleVideoEvent, true);
+ document.addEventListener('play', handleVideoEvent, true);
+ document.addEventListener('pause', handleVideoEvent, true);
+ document.addEventListener('ended', handleVideoEvent, true);
+ })(window, document);
+</script>
+ <!-- aid : 3671568720302 : cid : 8190573510602 : template : IMDb Slot Collapser Desktop-1.21 --><!-- [METADATA_START] {
+ "creativeId" : "8190573510602"
+ 
+ , "creativeHeight": 0 
+ , "creativeWidth": 0 
+ 
+ 
+ } [METADATA_END] --><script>document.ad={aid:"3671568720302",cid:"8190573510602",w:"0",h:"0"};</script>
+
+ <div id="top_rhs_webbug" style="display:none;">
+ <img src="./imp(1)" border="0" height="1" width="1" alt="">
+ </div>
+
+<script>document.write("<script defer>parent.window.top.ad_utils.ad_table.top_rhs.fired=true;<\/script>");</script><script defer="">parent.window.top.ad_utils.ad_table.top_rhs.fired=true;</script><script>document.close()</script></body></html>
