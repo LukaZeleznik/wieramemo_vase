@@ -2,6 +2,7 @@ import re, os, sys, codecs
 from bs4 import BeautifulSoup
 import difflib as dl
 
+self_closing_tags = ["area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr",]
 
 def cleanup_html(soup):
     soup.head.decompose()  # remove head
@@ -20,54 +21,40 @@ def build_DOM_tree(text):
     return tree
 
 
-visited1 = []  # List to keep track of visited nodes.
-queue1 = []  # Initialize a queue
-visited2 = []  # List to keep track of visited nodes.
-queue2 = []  # Initialize a queue
+wrap_gl = ""
+def construct_wrapper(graph, source, path= []):
+    global wrap_gl;
 
+    path.append(source)
+    print("<"+source.name+ ">")
+    wrap_gl += "<" + source.name + ".*?>\s*"
+    if len(source.find_all(recursive=False)) == 0:
+        # leaf node, backtrack, end
+        # not all tags have enclosing tag...
+        if source.name not in self_closing_tags:
+            print("</" + source.name + ">")
+            wrap_gl += "</.*?" + source.name + ">\s*"
+        return path
 
-# https://www.educative.io/edpresso/how-to-implement-a-breadth-first-search-in-python
-def bfs(startnode1, startnode2):
-    visited1.append(startnode1)
-    queue1.append(startnode1)
-    visited2.append(startnode2)
-    queue2.append(startnode2)
+    for neighbour in source.find_all(recursive=False):
+        path = construct_wrapper(graph, neighbour, path )
 
-    while (len(queue1) != 0) or (len(queue2) != 0):
-        if len(queue1) > 0:
-            s1 = queue1.pop(0)
-            print("1. ", s1.name, end=' ')
-            for neighbour in s1.find_all(recursive=False):
-                if neighbour not in visited1:  # might cause problems?
-                    visited1.append(neighbour)
-                    queue1.append(neighbour)
-        if len(queue2) > 0:
-            s2 = queue2.pop(0)
-            print("2. ", s2.name, end=' ')
-            for neighbour in s2.find_all(recursive=False):
-                if neighbour not in visited2:  # might cause problems?
-                    visited2.append(neighbour)
-                    queue2.append(neighbour)
-        print();
-
-        # TODO: ALIGN TREES, compare tags and strings mismaches, add strings to tree...
-
-        return;
+    if source.name not in self_closing_tags:
+        print("</"+ source.name+ ">")
+        wrap_gl += "</.*?" + source.name + ">\s*"
+    return path
 
 
 def roadrunner(text1, text2):
     # Site 1 is set as reg. expression wrapper. Update and generalize it by using the second (third, fourth,...) one.
-    tree1 = build_DOM_tree(text1);
-    tree2 = build_DOM_tree(text2);
-    wrapper = '^[\s\S]*<body[^\>]*>([\s\S]*)<\/body>[\s\S]*$'
+    tree1 = build_DOM_tree(text1)
+    tree2 = build_DOM_tree(text2)
 
-    # TODO: dynamically construct wrapper from tree1?
-    print(re.match(wrapper, tree1.prettify()))
+    # Here you construct regex from first trees
+    wr = construct_wrapper(tree1, tree1.html, [])
+    print(wrap_gl)
 
-    # Here you iterate through trees
-    bfs(tree1.html, tree2.html)
-
-    return wrapper
+    return wr
 
 
 def main():
@@ -79,7 +66,6 @@ def main():
 
     # Result is a union-free regular expression
     result_regex = roadrunner(text1, text2)
-    print(result_regex)
 
 
 if __name__ == "__main__":
