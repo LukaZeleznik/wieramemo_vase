@@ -59,8 +59,13 @@ def roadrunner(text1, text2):
 
 def main():
     ### Temporary
-    f1 = codecs.open("..\input-extraction\overstock.com\jewelry01.html", 'r');
-    f2 = codecs.open("..\input-extraction\overstock.com\jewelry02.html", 'r');
+    f1 = codecs.open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'overstock.com', 'jewelry01.html'),
+        'r')
+    f2 = codecs.open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'overstock.com',
+                     'jewelry02.html'),
+        'r')
     text1 = f1.read()
     text2 = f2.read()
 
