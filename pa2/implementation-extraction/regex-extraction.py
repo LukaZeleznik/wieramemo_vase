@@ -192,7 +192,7 @@ if __name__ == "__main__":
             print(overstock_html_name + ":", data) """
 
 
-    print()
+
 
     for imdb_html_name in imdb_html_names:
         f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..',  'input-extraction', 'imdb.com', imdb_html_name), 'r')
