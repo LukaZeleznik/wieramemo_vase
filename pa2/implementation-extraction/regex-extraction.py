@@ -111,14 +111,12 @@ def extract_with_regex_rtv(text):
     else:
         print("publishedTime1 not found")
 
-    content1 = re.findall('<article class="article">(.+?)</article>', text, flags=re.DOTALL)
+    content1 = re.findall('<article class="article">.*?(<p.*>(.*?)<\/p>).*?<div class="gallery">', text,re.DOTALL)
     if content1:
         #print(content1)
         for content in content1:
-            print(content)
-            if content[1] != '':
-                cnt = ' '.join(content[1].split())
-                if 'iframe' in cnt: continue
+            if content[0] != '':
+                cnt = ' '.join(content[0].split())
                 cnt = cnt.replace("<strong>","")
                 cnt = cnt.replace("</strong>","")
                 cnt = cnt.replace("<br>","")
@@ -126,12 +124,25 @@ def extract_with_regex_rtv(text):
                 cnt = cnt.replace("</sub>","")
                 cnt = cnt.replace("<a>","")
                 cnt = cnt.replace("</a>","")
+                cnt = cnt.replace("<p>","")
+                cnt = cnt.replace("</p>","")
+                cnt = cnt.replace("</figcaption>","")
+                cnt = cnt.replace("</figure>","")
+                cnt = cnt.replace("</span>","")
+                cnt = cnt.replace('<p class="Body">', '')
+                cnt = cnt.replace('<iframe src="./Audi A6 50 TDI quattro_ nemir v premijskem razredu - RTVSLO.si_files/LCypVFeHy_c.html" width="100%" height="350" frameborder="0" allowfullscreen="" border="0"></iframe>',"")
+                cnt = cnt.replace('<figure class="{hide_class} photoswipe image c-figure-full" itemprop="associatedMedia" itemscope="" itemtype="http://schema.org/ImageObject">',"")
+                cnt = cnt.replace('<a href="./Volvo XC 40 D4 AWD momentum_ suvereno med najboljše v razredu - RTVSLO.si_files/65559996.jpg" itemprop="contentUrl" data-size="1200x800" data-large="https://img.rtvslo.si/_up/upload/2019/01/25/65559996.jpg" data-id="1">',"")
+                cnt = cnt.replace('<img src="./Volvo XC 40 D4 AWD momentum_ suvereno med najboljše v razredu - RTVSLO.si_files/65559996.jpg" title="" alt="">',"")
+                cnt = cnt.replace('<figcaption itemprop="caption description">',"")
+                cnt = cnt.replace('<span class="icon-photo">',"")
+                cnt = cnt.replace('Foto: David Šavli',"")
                 if (cnt == ""): continue
-                #print(cnt)
                 contents.append(cnt)
     else:
         print("content1 not found")
-    return []
+    
+    #return []
     return [titles, subtitles, leads, authors, publishedTimes, contents]
 
 def extract_with_regex_imdb(text):
