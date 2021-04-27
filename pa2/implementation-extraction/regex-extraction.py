@@ -205,7 +205,7 @@ if __name__ == "__main__":
         extracted_data = extract_with_regex_rtv(page_html)
         for data in extracted_data:
             print(rtv_html_name + ":", data)
-""" 
+
     for overstock_html_name in overstock_html_names:
     #f = codecs.open("../input-extraction/overstock.com/" + overstock_html_name, 'r', encoding='iso-8859-1')
         f = codecs.open(os.path.join(os.getcwd(), 'pa2', 'input-extraction', 'overstock.com', overstock_html_name), 'r')
@@ -213,12 +213,11 @@ if __name__ == "__main__":
         extracted_data = extract_with_regex_overstock(page_html)
         for data in extracted_data:
             print(overstock_html_name + ":", data)
-"""
-"""
+
+
     for imdb_html_name in imdb_html_names:
-        f = codecs.open(os.path.join(os.getcwd(), 'pa2', 'input-extraction', 'imdb.com', imdb_html_name), 'r')
+        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..',  'input-extraction', 'imdb.com', imdb_html_name), 'r')
         page_html = f.read()
         extracted_data = extract_with_regex_imdb(page_html)
         for data in extracted_data:
             print(imdb_html_name + ":", data)
-"""

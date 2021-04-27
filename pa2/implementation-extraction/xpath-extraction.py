@@ -2,6 +2,7 @@ import codecs
 from lxml import html
 import re
 import json
+import os
 
 def extract_with_xpath_overstock(page_html):
 
@@ -174,19 +175,22 @@ if __name__ == "__main__":
 
 
     for rtv_html_name in rtv_html_names:
-        f = codecs.open("../input-extraction/rtvslo.si/" + rtv_html_name, 'r', encoding='utf-8')
+        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'rtvslo.si',
+                                     rtv_html_name), 'r', encoding='utf-8')
         page_html = f.read()
         extracted_data = extract_with_xpath_rtv(page_html)
         print(rtv_html_name + ":", extracted_data)
 
     for overstock_html_name in overstock_html_names:
-        f = codecs.open("../input-extraction/overstock.com/" + overstock_html_name, 'r', encoding='iso-8859-1')
+        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'overstock.com',
+                                     overstock_html_name), 'r', encoding='iso-8859-1')
         page_html = f.read()
         extracted_data = extract_with_xpath_overstock(page_html)
         print(overstock_html_name + ":", extracted_data)
 
     for imdb_html_name in imdb_html_names:
-        f = codecs.open("../input-extraction/imdb.com/" + imdb_html_name, 'r', encoding='utf-8')
+        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'imdb.com',
+                                     imdb_html_name), 'r', encoding='utf-8')
         page_html = f.read()
         extracted_data = extract_with_xpath_imdb(page_html)
         print(imdb_html_name + ":", extracted_data)
