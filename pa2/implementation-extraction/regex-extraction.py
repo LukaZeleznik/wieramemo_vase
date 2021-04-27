@@ -1,4 +1,5 @@
 import re, os, sys, codecs
+from lxml import html
 
 def extract_with_regex_overstock(text):
     titles = []
@@ -112,13 +113,25 @@ def extract_with_regex_rtv(text):
 
     content1 = re.findall('<article class="article">(.+?)</article>', text, flags=re.DOTALL)
     if content1:
-        print(content1)
+        #print(content1)
         for content in content1:
-            if content != '':
-                contents.append(' '.join(content.split()))
+            print(content)
+            if content[1] != '':
+                cnt = ' '.join(content[1].split())
+                if 'iframe' in cnt: continue
+                cnt = cnt.replace("<strong>","")
+                cnt = cnt.replace("</strong>","")
+                cnt = cnt.replace("<br>","")
+                cnt = cnt.replace("<sub>","")
+                cnt = cnt.replace("</sub>","")
+                cnt = cnt.replace("<a>","")
+                cnt = cnt.replace("</a>","")
+                if (cnt == ""): continue
+                #print(cnt)
+                contents.append(cnt)
     else:
         print("content1 not found")
-
+    return []
     return [titles, subtitles, leads, authors, publishedTimes, contents]
 
 def extract_with_regex_imdb(text):
@@ -174,25 +187,27 @@ if __name__ == "__main__":
     imdb_html_names = ["IMDb Top 250 - IMDb.html", "IMDb Top 250 TV - IMDb.html"]
 
 
-    """ for rtv_html_name in rtv_html_names:
+    for rtv_html_name in rtv_html_names:
         #f = codecs.open(r'..\input-extraction\rtvslo.si\' + rtv_html_name, 'r', encoding='utf-8')
         f = codecs.open(os.path.join(os.getcwd(), 'pa2', 'input-extraction', 'rtvslo.si', rtv_html_name), 'r', encoding='utf-8')
         page_html = f.read()
         extracted_data = extract_with_regex_rtv(page_html)
         for data in extracted_data:
             print(rtv_html_name + ":", data)
-
+""" 
     for overstock_html_name in overstock_html_names:
     #f = codecs.open("../input-extraction/overstock.com/" + overstock_html_name, 'r', encoding='iso-8859-1')
         f = codecs.open(os.path.join(os.getcwd(), 'pa2', 'input-extraction', 'overstock.com', overstock_html_name), 'r')
         page_html = f.read()
         extracted_data = extract_with_regex_overstock(page_html)
         for data in extracted_data:
-            print(overstock_html_name + ":", data) """
-
+            print(overstock_html_name + ":", data)
+"""
+"""
     for imdb_html_name in imdb_html_names:
         f = codecs.open(os.path.join(os.getcwd(), 'pa2', 'input-extraction', 'imdb.com', imdb_html_name), 'r')
         page_html = f.read()
         extracted_data = extract_with_regex_imdb(page_html)
         for data in extracted_data:
             print(imdb_html_name + ":", data)
+"""
