@@ -1,4 +1,4 @@
-import re, os, sys, codecs
+import re, os, sys, codecs, json
 from lxml import html
 
 def extract_with_regex_overstock(text):
@@ -57,6 +57,22 @@ def extract_with_regex_overstock(text):
     else:
         print("content1 not found")
 
+    data_records = []
+
+    for title, list_price, price, saving, saving_percent, content in zip(titles, listPrices, prices, priceSavings,
+                                                                         savingPercents, contents):
+        data_record = dict()
+        data_record["Title"] = title
+        data_record["ListPrice"] = list_price
+        data_record["Price"] = price
+        data_record["Saving"] = saving
+        data_record["SavingPercent"] = saving_percent
+        data_record["Content"] = content
+
+        data_records.append(data_record)
+
+    json_data_records = json.dumps(data_records, ensure_ascii=False)
+    return json_data_records
     return [titles, listPrices, prices, priceSavings, savingPercents, contents]
 
 def extract_with_regex_rtv(text):
@@ -143,6 +159,18 @@ def extract_with_regex_rtv(text):
         print("content1 not found")
     
     #return []
+    data_record = dict()
+
+    data_record["Author"] = authors[0]
+    data_record["Title"] = titles[0]
+    data_record["PublishedTime"] = publishedTimes[0]
+
+    data_record["SubTitle"] = subtitles[0]
+    data_record["Lead"] = leads[0]
+    data_record["Content"] = contents[0]
+
+    json_data_record = json.dumps(data_record, ensure_ascii=False)
+    return json_data_record
     return [titles, subtitles, leads, authors, publishedTimes, contents]
 
 def extract_with_regex_imdb(text):
@@ -186,10 +214,23 @@ def extract_with_regex_imdb(text):
     else:
         print("rating1 not found")
 
-    return [ranks, titles, years, ratings]
+    data_records = []
 
-if __name__ == "__main__":
+    for rank, title, year, rating in zip(ranks, titles, years, ratings):
+        data_record = dict()
 
+        data_record["Rank"] = rank
+        data_record["Title"] = title
+        data_record["Year"] = year
+        data_record["Rating"] = rating
+
+        data_records.append(data_record)
+
+    return data_records
+
+
+
+def main():
     rtv_html_names = ["Audi A6 50 TDI quattro_ nemir v premijskem razredu - RTVSLO.si.html",
                  "Volvo XC 40 D4 AWD momentum_ suvereno med najboljše v razredu - RTVSLO.si.html" ]
 
@@ -197,27 +238,29 @@ if __name__ == "__main__":
 
     imdb_html_names = ["IMDb Top 250 - IMDb.html", "IMDb Top 250 TV - IMDb.html"]
 
-
     for rtv_html_name in rtv_html_names:
         #f = codecs.open(r'..\input-extraction\rtvslo.si\' + rtv_html_name, 'r', encoding='utf-8')
-        f = codecs.open(os.path.join(os.getcwd(), 'pa2', 'input-extraction', 'rtvslo.si', rtv_html_name), 'r', encoding='utf-8')
+        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'rtvslo.si',
+                                     rtv_html_name), 'r', encoding='utf-8')
         page_html = f.read()
         extracted_data = extract_with_regex_rtv(page_html)
-        for data in extracted_data:
-            print(rtv_html_name + ":", data)
+        print(rtv_html_name + ":", extracted_data)
 
     for overstock_html_name in overstock_html_names:
     #f = codecs.open("../input-extraction/overstock.com/" + overstock_html_name, 'r', encoding='iso-8859-1')
-        f = codecs.open(os.path.join(os.getcwd(), 'pa2', 'input-extraction', 'overstock.com', overstock_html_name), 'r')
+        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'overstock.com',
+                                     overstock_html_name), 'r', encoding='iso-8859-1')
         page_html = f.read()
         extracted_data = extract_with_regex_overstock(page_html)
-        for data in extracted_data:
-            print(overstock_html_name + ":", data)
+        print(overstock_html_name + ":", extracted_data)
 
 
     for imdb_html_name in imdb_html_names:
-        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..',  'input-extraction', 'imdb.com', imdb_html_name), 'r')
+        f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'imdb.com',
+                                     imdb_html_name), 'r', encoding='utf-8')
         page_html = f.read()
         extracted_data = extract_with_regex_imdb(page_html)
-        for data in extracted_data:
-            print(imdb_html_name + ":", data)
+        print(imdb_html_name + ":", extracted_data)
+
+if __name__ == "__main__":
+    main()
