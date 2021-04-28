@@ -1,13 +1,13 @@
 import re, os, sys, codecs
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 import difflib as dl
 
 self_closing_tags = ["area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr",]
 
 def cleanup_html(soup):
-    soup.head.decompose()  # remove head
-    for script in soup.body.find_all('script'):
-        script.decompose()  # remove all script tags
+    #soup.head.decompose()  # remove head
+    #for script in soup.body.find_all('script'):
+    #    script.decompose()  # remove all script tags
     return soup.prettify()
 
 
@@ -22,28 +22,56 @@ def build_DOM_tree(text):
 
 
 wrap_gl = ""
-def construct_wrapper(graph, source, path= []):
+def construct_tag_list(source, path):
     global wrap_gl;
 
-    path.append(source)
-    print("<"+source.name+ ">")
-    wrap_gl += "<" + source.name + ".*?>\s*"
-    if len(source.find_all(recursive=False)) == 0:
-        # leaf node, backtrack, end
-        # not all tags have enclosing tag...
+    # HERE TAG IS OPENED
+    path.append(source.name)
+
+    # TAG DOES NOT HAVE LOWER LEVELS
+    if not source.find_all(recursive=False):
+        # leaf node, backtrack, close tag...
         if source.name not in self_closing_tags:
-            print("</" + source.name + ">")
-            wrap_gl += "</.*?" + source.name + ">\s*"
+            path.append("/" + source.name)
+            pass
         return path
 
-    for neighbour in source.find_all(recursive=False):
-        path = construct_wrapper(graph, neighbour, path )
+    # FOR EVERY TAGS CHILD
+    for child1 in source.children:
+        if not isinstance(child1, NavigableString):
+            path = construct_tag_list(child1, path)
 
+    # HERE TAG IS CLOSED
     if source.name not in self_closing_tags:
-        print("</"+ source.name+ ">")
-        wrap_gl += "</.*?" + source.name + ">\s*"
+        path.append("/" + source.name)
+        pass
     return path
 
+def compare_tag_lists(list1, list2):
+    # Indices list of matching element from other list
+    # Using loop + count()
+    res = []
+    i = 0
+    j = 0
+    for tag in list1:
+        if list1[i] == list2[j]:
+            res.append(i)
+            print(list1[i], "  ",list2[j])
+        else:
+            # TAG MISMATCH, find closing tag
+            print(list1[i], "  ", list2[j], " M")
+            catch=j
+            while list2[catch] != (list1[i]):
+                print(list2[catch], " ",catch)
+                catch += 1
+            j=catch
+
+        i += 1
+        j += 1
+
+    print("The matching element Indices list : " + str(res))
+
+    return
 
 def roadrunner(text1, text2):
     # Site 1 is set as reg. expression wrapper. Update and generalize it by using the second (third, fourth,...) one.
@@ -51,10 +79,13 @@ def roadrunner(text1, text2):
     tree2 = build_DOM_tree(text2)
 
     # Here you construct regex from first trees
-    wr = construct_wrapper(tree1, tree1.html, [])
-    print(wrap_gl)
+    tag_list1 = construct_tag_list(tree1.body, [])
+    print(tag_list1)
+    tag_list2 = construct_tag_list(tree2.body, [])
+    print(tag_list2)
 
-    return wr
+    compare_tag_lists(tag_list1, tag_list2)
+    return
 
 
 def main():
