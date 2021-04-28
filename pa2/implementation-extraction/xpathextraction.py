@@ -164,10 +164,9 @@ def extract_with_xpath_imdb(page_html):
 
     return data_records
 
-if __name__ == "__main__":
-
+def main():
     rtv_html_names = ["Audi A6 50 TDI quattro_ nemir v premijskem razredu - RTVSLO.si.html",
-                 "Volvo XC 40 D4 AWD momentum_ suvereno med najboljše v razredu - RTVSLO.si.html" ]
+                "Volvo XC 40 D4 AWD momentum_ suvereno med najboljše v razredu - RTVSLO.si.html" ]
 
     overstock_html_names = ["jewelry01.html", "jewelry02.html"]
 
@@ -194,3 +193,6 @@ if __name__ == "__main__":
         page_html = f.read()
         extracted_data = extract_with_xpath_imdb(page_html)
         print(imdb_html_name + ":", extracted_data)
+
+if __name__ == "__main__":
+    main()
