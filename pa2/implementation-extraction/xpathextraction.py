@@ -66,7 +66,7 @@ def extract_with_xpath_overstock(page_html):
 
         data_records.append(data_record)
 
-    json_data_records = json.dumps(data_records, ensure_ascii=False)
+    json_data_records = json.dumps(data_records, ensure_ascii=False, indent=4)
     return json_data_records
 
 def extract_with_xpath_rtv(page_html):
@@ -111,7 +111,7 @@ def extract_with_xpath_rtv(page_html):
     data_record["Lead"] = lead
     data_record["Content"] = content
 
-    json_data_record = json.dumps(data_record, ensure_ascii=False)
+    json_data_record = json.dumps(data_record, ensure_ascii=False, indent=4)
     return json_data_record
 
 def extract_with_xpath_imdb(page_html):
@@ -168,7 +168,7 @@ def extract_with_xpath_imdb(page_html):
     data_record_main["ListSubitle"] = list_subtitle
     data_record_main["List"] = data_records
 
-    json_data_record_main = json.dumps(data_record_main, ensure_ascii=False)
+    json_data_record_main = json.dumps(data_record_main, ensure_ascii=False, indent=4)
     return json_data_record_main
 
 def main():

@@ -71,7 +71,7 @@ def extract_with_regex_overstock(text):
 
         data_records.append(data_record)
 
-    json_data_records = json.dumps(data_records, ensure_ascii=False)
+    json_data_records = json.dumps(data_records, ensure_ascii=False, indent=4)
     return json_data_records
     return [titles, listPrices, prices, priceSavings, savingPercents, contents]
 
@@ -169,7 +169,7 @@ def extract_with_regex_rtv(text):
     data_record["Lead"] = leads[0]
     data_record["Content"] = contents[0]
 
-    json_data_record = json.dumps(data_record, ensure_ascii=False)
+    json_data_record = json.dumps(data_record, ensure_ascii=False, indent=4)
     return json_data_record
     return [titles, subtitles, leads, authors, publishedTimes, contents]
 
@@ -251,7 +251,7 @@ def extract_with_regex_imdb(text):
     data_record_main["ListSubitle"] = list_subtitle
     data_record_main["List"] = data_records
 
-    json_data_record_main = json.dumps(data_record_main, ensure_ascii=False)
+    json_data_record_main = json.dumps(data_record_main, ensure_ascii=False, indent=4)
     return json_data_record_main
 
 
