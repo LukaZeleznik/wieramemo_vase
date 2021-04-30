@@ -114,14 +114,17 @@ def extract_with_xpath_rtv(page_html):
     json_data_record = json.dumps(data_record, ensure_ascii=False)
     return json_data_record
 
-def extract_with_xpath_24ur():
-    pass
-
 def extract_with_xpath_imdb(page_html):
 
-    # rank = title = year = rating = ""
-
+    # rank = title = year = rating = list_title = list_subtitle = ""
     document_tree = html.fromstring(page_html)
+
+
+    list_title = document_tree.xpath('//*[@id="main"]/div/span/div/div/h1/text()')
+    list_subtitle = document_tree.xpath('//*[@id="main"]/div/span/div/div/div[2]/text()')
+    # print(list_title[0], list_subtitle[0])
+    list_title = list_title[0]
+    list_subtitle = list_subtitle[0]
 
     ranks = document_tree.xpath('//tbody[@class="lister-list"]/tr[*]/td[2]/text()')
 
@@ -148,8 +151,6 @@ def extract_with_xpath_imdb(page_html):
 
     ratings = document_tree.xpath('//tbody[@class="lister-list"]/tr[*]/td[3]/strong/text()')
 
- 
-
     data_records = []
 
     for rank, title, year, rating in zip(ranks, titles, years, ratings):
@@ -162,7 +163,13 @@ def extract_with_xpath_imdb(page_html):
 
         data_records.append(data_record)
 
-    return data_records
+    data_record_main = dict()
+    data_record_main["ListTitle"] = list_title
+    data_record_main["ListSubitle"] = list_subtitle
+    data_record_main["List"] = data_records
+
+    json_data_record_main = json.dumps(data_record_main, ensure_ascii=False)
+    return json_data_record_main
 
 def main():
     rtv_html_names = ["Audi A6 50 TDI quattro_ nemir v premijskem razredu - RTVSLO.si.html",
@@ -171,7 +178,6 @@ def main():
     overstock_html_names = ["jewelry01.html", "jewelry02.html"]
 
     imdb_html_names = ["IMDb Top 250 - IMDb.html", "IMDb Top 250 TV - IMDb.html"]
-
 
     for rtv_html_name in rtv_html_names:
         f = codecs.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'input-extraction', 'rtvslo.si',
