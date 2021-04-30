@@ -178,6 +178,8 @@ def extract_with_regex_imdb(text):
     titles = []
     years = []
     ratings = []
+    list_title = ""
+    list_subtitle = ""
 
     rank1 = re.findall('<td class="titleColumn">(.+?)<a', text, flags=re.DOTALL)
     if rank1:
@@ -216,6 +218,24 @@ def extract_with_regex_imdb(text):
 
     data_records = []
 
+    list_title1 = re.findall('''<title>(.+?)</title>''', text, flags=re.DOTALL)
+    if list_title1:
+        for listTitle in list_title1:
+            if listTitle != '':
+                list_title = (' '.join(listTitle.split()))
+    else:
+        print("list_title1 not found")
+
+    list_subtitle1 = re.findall('<div class="byline">(.+?)</div>', text, flags=re.DOTALL)
+    if list_subtitle1:
+        for listsubtitle in list_subtitle1:
+            if listsubtitle != '':
+                list_subtitle = (' '.join(listsubtitle.split()))
+    else:
+        print("list_subtitle1 not found")
+
+    data_records = []
+
     for rank, title, year, rating in zip(ranks, titles, years, ratings):
         data_record = dict()
 
@@ -226,7 +246,13 @@ def extract_with_regex_imdb(text):
 
         data_records.append(data_record)
 
-    return data_records
+    data_record_main = dict()
+    data_record_main["ListTitle"] = list_title
+    data_record_main["ListSubitle"] = list_subtitle
+    data_record_main["List"] = data_records
+
+    json_data_record_main = json.dumps(data_record_main, ensure_ascii=False)
+    return json_data_record_main
 
 
 
