@@ -80,15 +80,15 @@ def check_tags_text(tag1, tag2):
         if not isinstance(a, Comment) and len(a.strip())>0:
             text2_list.append(a.strip())
     if text1_list==text2_list:
-        for i in text1_list: print(i)
+        for i in text1_list: print(i , end = "  ")
     else:
-        print("#TEXT")
+        print("#TEXT" , end = "  ")
 
     return
 
 def compare_tag_lists(list1, list2):
     """lists of tuples ('<', tag)"""
-
+    print("<html>  <head>  </head>", end = "  ")
     # Indices list of matching element from other list
     i = 0
     j = 0
@@ -98,7 +98,7 @@ def compare_tag_lists(list1, list2):
         if tag1.name == tag2.name:
             # TAG MATCH
             #print(list1[i][0], tag1.name, "  ", list2[j][0],tag2.name)
-            print(list1[i][0] + tag1.name + ">") # opening tag, print to output
+            print(list1[i][0] + tag1.name + ">", end = "  ") # opening tag, print to output
 
             #IF TAGS MATCH CHECK THEIR TEXT
             if list1[i][0] != "</": check_tags_text(tag1, tag2)
@@ -120,7 +120,7 @@ def compare_tag_lists(list1, list2):
                 for n in square_candidate:
                     if n[0] == "</": print ("<"+n+">", end = "")
                     else: print (n+">", end = "")
-                print(")?")
+                print(")?", end = "  ")
                 continue
 
             # SAMPLE is repeating
@@ -140,7 +140,7 @@ def compare_tag_lists(list1, list2):
 
         i += 1
         j += 1
-
+    print("</html>  ")
     return
 
 def get_previous_tag_name(items_list, current_index):
