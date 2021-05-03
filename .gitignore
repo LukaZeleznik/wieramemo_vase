@@ -1,6 +1,7 @@
 chromedriver.exe
 crawled.txt
 frontier.txt
+/pa3/implementation-indexing/inverted-index.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
