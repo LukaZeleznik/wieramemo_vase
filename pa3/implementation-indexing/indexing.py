@@ -3,28 +3,56 @@ import os
 
 from bs4 import BeautifulSoup, Comment
 from nltk.tokenize import word_tokenize
-import nltk
+import re
 import stopwords
+import string
+
 
 def get_text_preprocessed(text):
-
     # Tokenization
     tokenized_text = word_tokenize(text)
 
-    # Stopwords removal
-    tokens_without_sw = [word for word in tokenized_text if not word in stopwords.stop_words_slovene]
-    print(tokens_without_sw)
-
     # To lower case
-    for idx, word in enumerate(tokens_without_sw):
-        tokens_without_sw[idx] = word.lower()
+    for idx, word in enumerate(tokenized_text):
+        tokenized_text[idx] = word.lower()
 
-    print(tokens_without_sw)
-    # todo: remove punctuation
-    return text
+    # Stopwords removal
+    tokens_no_sw = [word for word in tokenized_text if not word in stopwords.stop_words_slovene]
+
+    # Remove punctuation
+    tokens_no_punct = [s for s in tokens_no_sw if s not in string.punctuation]
+
+    return tokens_no_punct
+
+
+def get_indices(text_preprocesed, page_html):
+    indices = []
+    for word in text_preprocesed:
+        regular_ex = rf"\b{word}\b"
+        is_in_document = re.search(regular_ex, page_html, flags=re.IGNORECASE)
+        if is_in_document:
+            ind_of_word = []
+            for match in re.finditer(regular_ex, page_html, flags=re.IGNORECASE):
+                num_ind = match.start()
+                ind_of_word.append(num_ind)
+            indices.append(ind_of_word)
+        else:
+            indices.append("ERROR: " + word)
+    
+    return indices
+
+
+def extract_website_text(soup):
+    text = soup.body.stripped_strings
+    text_combined = ""
+    for a in [text for text in soup.body.stripped_strings]:
+        text_combined = text_combined + " " + a
+    return text_combined
+
 
 def website_processing(page_html):
     soup = BeautifulSoup(page_html, features="html.parser")
+    desired_tag = soup.find("link")
 
     # kill all script and style elements
     for element in soup(["script", "style"]):
@@ -35,24 +63,30 @@ def website_processing(page_html):
         comment.extract()
 
     # Get text as combined string from body tag
-    text = soup.body.get_text()
+    text_data = soup.body.get_text(separator=' ')
 
-    # todo: get indices from html documents for every word...
-    text_preprocesed = get_text_preprocessed(text)
+    # Preprocess text (tokenize, e.g.)
+    text_preprocesed = get_text_preprocessed(text_data)
+    print(text_preprocesed)
+
+    # Find indices of words
+    # MAYBE WE NEED TO DELETE SCRIPT TAGS FROM HTML STRING IN WHICH WE FIND INDICES
+    indices = get_indices(text_preprocesed, page_html)
 
     return
+
 
 def main():
     domains = ["e-prostor.gov.si", "e-uprava.gov.si", "evem.gov.si", "podatki.gov.si"]
 
-    i=1
+    i = 1
     for domain in domains:
-        if i == 1: # Temporary
+        if i == 1:  # Temporary
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webpages-data', domain)
             # Loop through files in directory
             for root, dirs, files in sorted(os.walk(path, topdown=True)):
                 for name in files:
-                    if name.endswith('.html') and i==1:
+                    if name.endswith('.html') and i == 1:
                         name = os.path.join(root, name)
                         print('READING: ', name)
                         f = codecs.open(name, 'r', encoding='utf-8')
