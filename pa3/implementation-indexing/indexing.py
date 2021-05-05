@@ -6,7 +6,10 @@ from nltk.tokenize import word_tokenize
 import re
 import stopwords
 import string
+# noinspection PyUnresolvedReferences
+import db_methods as db
 
+additionally_ignored = ['x', '×', '–', '•', '©', '--']  # ignore like stopwords
 
 def get_text_preprocessed(text):
     # Tokenization
@@ -17,7 +20,9 @@ def get_text_preprocessed(text):
         tokenized_text[idx] = word.lower()
 
     # Stopwords removal
-    tokens_no_sw = [word for word in tokenized_text if not word in stopwords.stop_words_slovene]
+    tokens_no_sw = [word for word in tokenized_text if not word in stopwords.stop_words_slovene and not word in additionally_ignored]
+    # Remove strings that contain number
+    tokens_no_sw = [word for word in tokens_no_sw if not bool(re.search(r'\d', word))]
 
     # Remove punctuation
     tokens_no_punct = [s for s in tokens_no_sw if s not in string.punctuation]
@@ -38,19 +43,22 @@ def get_indices(text_preprocesed, page_html):
             indices.append(ind_of_word)
         else:
             indices.append("ERROR: " + word)
-    
+            print("Word not found:", word)
+
     return indices
 
 
-def extract_website_text(soup):
-    text = soup.body.stripped_strings
-    text_combined = ""
-    for a in [text for text in soup.body.stripped_strings]:
-        text_combined = text_combined + " " + a
-    return text_combined
+def write_to_database(words, indices, domain, filename):
+    print("WRITING TO DATABASE: ", filename, ", ", str(len(words)) ," words")
+    # INSERT IN IndexWord table
+    for word in words:
+        db.insert_IndexWord(word)
+
+    # TODO: INSERT IN posting table (word, filename, indices...)
+    return
 
 
-def website_processing(page_html):
+def website_indexing(page_html, domain, filename):
     soup = BeautifulSoup(page_html, features="html.parser")
     desired_tag = soup.find("link")
 
@@ -73,11 +81,17 @@ def website_processing(page_html):
     # MAYBE WE NEED TO DELETE SCRIPT TAGS FROM HTML STRING IN WHICH WE FIND INDICES
     indices = get_indices(text_preprocesed, page_html)
 
+    # Write words into database
+    write_to_database(text_preprocesed, indices, domain, filename)
+
     return
 
 
 def main():
     domains = ["e-prostor.gov.si", "e-uprava.gov.si", "evem.gov.si", "podatki.gov.si"]
+
+    # Delete database
+    db.delete_IndexWord()
 
     i = 1
     for domain in domains:
@@ -87,13 +101,15 @@ def main():
             for root, dirs, files in sorted(os.walk(path, topdown=True)):
                 for name in files:
                     if name.endswith('.html') and i == 1:
-                        name = os.path.join(root, name)
-                        print('READING: ', name)
-                        f = codecs.open(name, 'r', encoding='utf-8')
-                        page_html = f.read()
-                        website_processing(page_html)
+                        filepath_full = os.path.join(root, name)
                         i += 1  # Temporary
+                        f = codecs.open(filepath_full, 'r', encoding='utf-8')
+                        page_html = f.read()
+                        website_indexing(page_html, domain, name)
 
+    # Close connection database
+    db.close_connection()
 
 if __name__ == "__main__":
     main()
+
