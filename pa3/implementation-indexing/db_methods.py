@@ -55,6 +55,31 @@ def delete_Posting():
         print("Error Posting: " + error.args[0])
 
     return
+
+def search_Postings(query):
+    c = conn.cursor()
+    sql_query = '''
+        SELECT p.documentName AS docName, SUM(frequency) AS freq, GROUP_CONCAT(indexes) AS idxs
+        FROM Posting p
+        WHERE
+            p.word IN ({seqe})
+        GROUP BY p.documentName
+        ORDER BY freq DESC;
+    '''.format(
+        seqe=','.join(['?'] * len(query)))
+    data_to_insert = query
+
+    #sql = "select * from sqlitetable where rowid in ({seq})".format(
+     #   seq=','.join(['?'] * len(args)))
+
+    try:
+        res = c.execute(sql_query, data_to_insert)
+        conn.commit()
+        return res
+    except sqlite3.Error as error:
+        print("Error Search: " + error.args[0])
+    return
+
 # ----------> OTHER METHODS <---------- #
 def close_connection():
     try:

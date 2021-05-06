@@ -59,14 +59,13 @@ def write_to_database(words, domain, filename):
 
         # INSERT IN Posting table(word, filename, indices...) e.g.: (‘davek’, ‘evem.gov.si/evem.gov.si.4.html’, 3,
         # ‘2,34,894’)
-        db.insert_Posting(word, domain+filename, len(posting[1]), ",".join(posting[1]))
-
+        db.insert_Posting(word, domain+"/"+filename, len(posting[1]), ",".join(posting[1]))
+    print("FINISHED WRITING TO DATABASE.")
     return
 
 
 def website_indexing(page_html, domain, filename):
     soup = BeautifulSoup(page_html, features="html.parser")
-    desired_tag = soup.find("link")
 
     # kill all script and style elements
     for element in soup(["script", "style"]):
@@ -77,7 +76,7 @@ def website_indexing(page_html, domain, filename):
         comment.extract()
 
     # Get text as combined string from body tag
-    text_data = soup.body.get_text(separator=' ')   # TEXT EXTRACTION ON SAME PART OF HTML AS INDICES EXTRACTION !
+    text_data = soup.body.get_text(separator=' ')
 
     # Preprocess text (tokenize, e.g.)
     text_preprocesed = get_text_preprocessed(text_data)   # RESULT: [('word1', idx1), ('word2', idx2), ...]
@@ -97,12 +96,12 @@ def main():
 
     i = 1
     for domain in domains:
-        if i == 1:  # Temporary
+        if i == 1 or i == 2:  # Temporary
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webpages-data', domain)
             # Loop through files in directory
             for root, dirs, files in sorted(os.walk(path, topdown=True)):
                 for name in files:
-                    if name.endswith('.html') and i == 1:
+                    if name.endswith('.html') and (i == 1 or i == 2):
                         filepath_full = os.path.join(root, name)
                         i += 1  # Temporary
                         f = codecs.open(filepath_full, 'r', encoding='utf-8')
