@@ -17,44 +17,50 @@ def get_text_preprocessed(text):
 
     # To lower case
     for idx, word in enumerate(tokenized_text):
-        tokenized_text[idx] = word.lower()
+        tokenized_text[idx] = (word.lower(), idx)   # INDICES !!!
 
     # Stopwords removal
-    tokens_no_sw = [word for word in tokenized_text if not word in stopwords.stop_words_slovene and not word in additionally_ignored]
+    tokens_no_sw = [word for word in tokenized_text if not word[0] in stopwords.stop_words_slovene and not word[0] in additionally_ignored]
     # Remove strings that contain number
-    tokens_no_sw = [word for word in tokens_no_sw if not bool(re.search(r'\d', word))]
+    tokens_no_sw = [word for word in tokens_no_sw if not bool(re.search(r'\d', word[0]))]
 
     # Remove punctuation
-    tokens_no_punct = [s for s in tokens_no_sw if s not in string.punctuation]
+    tokens_no_punct = [s for s in tokens_no_sw if s[0] not in string.punctuation]
+    # Tokens might have symbols (e.g. etn_prava) --> maybe split it?
 
     return tokens_no_punct
 
 
-def get_indices(text_preprocesed, page_html):
-    indices = []
-    for word in text_preprocesed:
-        regular_ex = rf"\b{word}\b"
-        is_in_document = re.search(regular_ex, page_html, flags=re.IGNORECASE)
-        if is_in_document:
-            ind_of_word = []
-            for match in re.finditer(regular_ex, page_html, flags=re.IGNORECASE):
-                num_ind = match.start()
-                ind_of_word.append(num_ind)
-            indices.append(ind_of_word)
+def get_repetitions_word_postings(word_postings, word):
+    for item in word_postings:
+        if word == item[0]:
+            return item
+    #a =[item for item in word_postings if words[i] == item[0]]
+    return None
+
+def write_to_database(words, domain, filename):
+
+    # PRE-PROCESS FOR POSTINGS TABLE (frequencies of words, count repetitions)
+    word_postings = [] # List of sets with non-duplicated words and counted repetition (freq)
+    for i in range(len(words)):
+        item_word_postings = get_repetitions_word_postings(word_postings, words[i][0])
+        if not item_word_postings:
+            word_postings.append([words[i][0], [str(words[i][1])]])   # [['uporablja', [2]], ['piškotke', [3]], ...]
         else:
-            indices.append("ERROR: " + word)
-            print("Word not found:", word)
+            # Word already exists, add index of repetition to array (increase freq.)
+            item_word_postings[1].append(str(words[i][1]))
 
-    return indices
+    print("WRITING TO DATABASE: ",filename+", ", str(len(words)), " words, ", str(len(word_postings)), " unique words",)
 
-
-def write_to_database(words, indices, domain, filename):
-    print("WRITING TO DATABASE: ", filename, ", ", str(len(words)) ," words")
-    # INSERT IN IndexWord table
-    for word in words:
+    for posting in word_postings:
+        word = posting[0]
+        # INSERT IN IndexWord table
         db.insert_IndexWord(word)
 
-    # TODO: INSERT IN posting table (word, filename, indices...)
+        # INSERT IN Posting table(word, filename, indices...) e.g.: (‘davek’, ‘evem.gov.si/evem.gov.si.4.html’, 3,
+        # ‘2,34,894’)
+        db.insert_Posting(word, domain+filename, len(posting[1]), ",".join(posting[1]))
+
     return
 
 
@@ -71,18 +77,13 @@ def website_indexing(page_html, domain, filename):
         comment.extract()
 
     # Get text as combined string from body tag
-    text_data = soup.body.get_text(separator=' ')
+    text_data = soup.body.get_text(separator=' ')   # TEXT EXTRACTION ON SAME PART OF HTML AS INDICES EXTRACTION !
 
     # Preprocess text (tokenize, e.g.)
-    text_preprocesed = get_text_preprocessed(text_data)
-    print(text_preprocesed)
-
-    # Find indices of words
-    # MAYBE WE NEED TO DELETE SCRIPT TAGS FROM HTML STRING IN WHICH WE FIND INDICES
-    indices = get_indices(text_preprocesed, page_html)
+    text_preprocesed = get_text_preprocessed(text_data)   # RESULT: [('word1', idx1), ('word2', idx2), ...]
 
     # Write words into database
-    write_to_database(text_preprocesed, indices, domain, filename)
+    write_to_database(text_preprocesed, domain, filename)
 
     return
 
@@ -92,6 +93,7 @@ def main():
 
     # Delete database
     db.delete_IndexWord()
+    db.delete_Posting()
 
     i = 1
     for domain in domains:
