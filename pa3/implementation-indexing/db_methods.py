@@ -12,7 +12,7 @@ def insert_IndexWord(word):
     try:
         ex = cur.execute(query, data_to_insert)
         conn.commit()
-        return ex
+        return ex.fetchall()
     except sqlite3.Error as error:
         print("Error IndexWord: " + error.args[0])
     return

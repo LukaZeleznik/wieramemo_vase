@@ -56,6 +56,7 @@ def write_to_database(words, domain, filename):
         word = posting[0]
         # INSERT IN IndexWord table
         db.insert_IndexWord(word)
+        #print(db.insert_IndexWord(word))
 
         # INSERT IN Posting table(word, filename, indices...) e.g.: (‘davek’, ‘evem.gov.si/evem.gov.si.4.html’, 3,
         # ‘2,34,894’)
@@ -103,6 +104,7 @@ def main():
                 for name in files:
                     if name.endswith('.html') and (i == 1 or i == 2):
                         filepath_full = os.path.join(root, name)
+                        print(filepath_full)
                         i += 1  # Temporary
                         f = codecs.open(filepath_full, 'r', encoding='utf-8')
                         page_html = f.read()
