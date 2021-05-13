@@ -9,7 +9,7 @@ import string
 # noinspection PyUnresolvedReferences
 import db_methods as db
 
-additionally_ignored = ['x', '×', '–', '•', '©', '--']  # ignore like stopwords
+additionally_ignored = ['x', '×', '–', '•', '©', '--', '\'\'']  # ignore like stopwords
 
 def get_text_preprocessed(text):
     # Tokenization
@@ -23,6 +23,8 @@ def get_text_preprocessed(text):
     tokens_no_sw = [word for word in tokenized_text if not word[0] in stopwords.stop_words_slovene and not word[0] in additionally_ignored]
     # Remove strings that contain number
     tokens_no_sw = [word for word in tokens_no_sw if not bool(re.search(r'\d', word[0]))]
+    # Filter out all strings that dont satisfy :[a-zA-ZšžčćŠŽĆČ]+      (symbols...)
+    tokens_no_sw = [word for word in tokens_no_sw if bool(re.match('([a-zA-ZšžčćŠŽĆČ]+)', word[0]))]
 
     # Remove punctuation
     tokens_no_punct = [s for s in tokens_no_sw if s[0] not in string.punctuation]
@@ -39,7 +41,7 @@ def get_repetitions_word_postings(word_postings, word):
     return None
 
 def write_to_database(words, domain, filename):
-
+    print(words)
     # PRE-PROCESS FOR POSTINGS TABLE (frequencies of words, count repetitions)
     word_postings = [] # List of sets with non-duplicated words and counted repetition (freq)
     for i in range(len(words)):
@@ -97,21 +99,21 @@ def main():
 
     i = 1
     for domain in domains:
-        if i == 1 or i == 2:  # Temporary
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webpages-data', domain)
-            # Loop through files in directory
-            for root, dirs, files in sorted(os.walk(path, topdown=True)):
-                for name in files:
-                    if name.endswith('.html') and (i == 1 or i == 2):
-                        filepath_full = os.path.join(root, name)
-                        print(filepath_full)
-                        i += 1  # Temporary
-                        f = codecs.open(filepath_full, 'r', encoding='utf-8')
-                        page_html = f.read()
-                        website_indexing(page_html, domain, name)
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webpages-data', domain)
+        # Loop through files in directory
+        for root, dirs, files in sorted(os.walk(path, topdown=True)):
+            for name in files:
+                if name.endswith('.html'):
+                    filepath_full = os.path.join(root, name)
+                    print(filepath_full)
+                    i += 1  # Temporary
+                    f = codecs.open(filepath_full, 'r', encoding='utf-8')
+                    page_html = f.read()
+                    website_indexing(page_html, domain, name)
 
     # Close connection database
     db.close_connection()
+    print("Indexed ", i-1 , " documents.")
 
 if __name__ == "__main__":
     main()
