@@ -8,7 +8,10 @@ import os
 import codecs
 from bs4 import BeautifulSoup, Comment
 
-additionally_ignored = ['x', '×', '–', '•', '©', '--']  # ignore like stopwords
+additionally_ignored = ['x', '×', '–', '•', '©', '--', '\'\'']  # ignore like stopwords
+
+indexWord = []
+postings = []
 
 def get_query_preprocessed(text):
     # Tokenization
@@ -74,17 +77,23 @@ def get_snipet(doc, freq, indexes):
     else:
         return 'Error'
 
-def output_result(result):
+def output_result(query, printHeader):
     #for row in result:
     #    print(f"\tHits: {row[1]}\n\t\tDoc: '{row[0]}'\n\t\tIndexes: {row[2]}")
+    #print("result", result)
 
-    print('-' * 120)
-    print(f"{'Frequencies':<15}{'Document':<45}{'Snippet':<50}")
-    print(f"{'-' * 13:<15}{'-' * 43:<45}{'-' * 60:<60}")
+    if printHeader:
+        print('-' * 120)
+        print(f"{'Frequencies':<15}{'Document':<45}{'Snippet':<50}")
+        print(f"{'-' * 13:<15}{'-' * 43:<45}{'-' * 60:<60}")
 
-    for row in result:
-        snipet = get_snipet(row[0], row[1], row[2])
-        print(f"{row[1]:<15}{row[0]:<45}{snipet:<60}")
+    #print('printHeader', printHeader)
+
+    for posting in postings:
+        if posting[0] == query:
+            snipet = get_snipet(posting[1], posting[2], str(posting[3]))
+            print(f"{posting[2]:<15}{posting[1]:<45}{snipet:<60}")
+            return
 
 def get_text_preprocessed(text):
     # Tokenization
@@ -96,8 +105,12 @@ def get_text_preprocessed(text):
 
     # Stopwords removal
     tokens_no_sw = [word for word in tokenized_text if not word[0] in stopwords.stop_words_slovene and not word[0] in additionally_ignored]
+
     # Remove strings that contain number
     tokens_no_sw = [word for word in tokens_no_sw if not bool(re.search(r'\d', word[0]))]
+
+    # Filter out all strings that dont satisfy :[a-zA-ZšžčćŠŽĆČ]+      (symbols...)
+    tokens_no_sw = [word for word in tokens_no_sw if bool(re.match('([a-zA-ZšžčćŠŽĆČ]+)', word[0]))]
 
     # Remove punctuation
     tokens_no_punct = [s for s in tokens_no_sw if s[0] not in string.punctuation]
@@ -105,7 +118,44 @@ def get_text_preprocessed(text):
 
     return tokens_no_punct
 
-def get_preprocesed_text(page_html):
+def get_repetitions_word_postings(word_postings, word):
+    for item in word_postings:
+        if word == item[0]:
+            return item
+    #a =[item for item in word_postings if words[i] == item[0]]
+    return None
+
+def write_to_variable(words, domain, filename):
+    #print(words)
+    indexWord.clear()
+    postings.clear()
+    # PRE-PROCESS FOR POSTINGS TABLE (frequencies of words, count repetitions)
+    word_postings = [] # List of sets with non-duplicated words and counted repetition (freq)
+    for i in range(len(words)):
+        item_word_postings = get_repetitions_word_postings(word_postings, words[i][0])
+        if not item_word_postings:
+            word_postings.append([words[i][0], [str(words[i][1])]])   # [['uporablja', [2]], ['piškotke', [3]], ...]
+        else:
+            # Word already exists, add index of repetition to array (increase freq.)
+            item_word_postings[1].append(str(words[i][1]))
+
+    #print("WRITING TO VARIABLE: ",filename+", ", str(len(words)), " words, ", str(len(word_postings)), " unique words",)
+
+    for posting in word_postings:
+        word = posting[0]
+        # INSERT IN IndexWord table
+        indexWord.append(word)
+        #print(db.insert_IndexWord(word))
+
+        # INSERT IN Posting table(word, filename, indices...) e.g.: (‘davek’, ‘evem.gov.si/evem.gov.si.4.html’, 3,
+        # ‘2,34,894’)
+        postings.append([word, domain+"/"+filename, len(posting[1]), ",".join(posting[1])])
+    #print("FINISHED WRITING TO VARIABLE.")
+    #print('indexWord', indexWord)
+    #print('postings', postings)
+    return
+
+def website_indexing(page_html, domain, filename):
     soup = BeautifulSoup(page_html, features="html.parser")
 
     # kill all script and style elements
@@ -122,7 +172,12 @@ def get_preprocesed_text(page_html):
     # Preprocess text (tokenize, e.g.)
     text_preprocesed = get_text_preprocessed(text_data)   # RESULT: [('word1', idx1), ('word2', idx2), ...]
 
-def search_postings(query):
+    # Write words into database
+    write_to_variable(text_preprocesed, domain, filename)
+
+    return
+
+def search_postings(query_tup):
     domains = ["e-prostor.gov.si", "e-uprava.gov.si", "evem.gov.si", "podatki.gov.si"]
 
     i = 1
@@ -134,11 +189,18 @@ def search_postings(query):
                 for name in files:
                     if name.endswith('.html') and (i == 1 or i == 2):
                         filepath_full = os.path.join(root, name)
-                        print(filepath_full)
+                        #print(filepath_full)
                         i += 1  # Temporary
                         f = codecs.open(filepath_full, 'r', encoding='utf-8')
                         page_html = f.read()
-                        get_preprocesed_text(page_html)
+                        website_indexing(page_html, domain, name)
+                        
+                        printHeader = True
+                        for query in query_tup:
+                            output_result(query, printHeader)
+                            printHeader = False
+
+
 
 
 def search(input_query):
@@ -147,13 +209,13 @@ def search(input_query):
     print("query: ",query_processed)
     query_tup = tuple(query_processed)
 
-    result = search_postings(query_tup)
-    output_result(result)
+
+    search_postings(query_tup)
 
 def main():
     print('Search: ', end=" ")
     #query = input()
-    query = 'Sistem SPOT'
+    query = 'SPOT Sistem informacije'
     search(query)
 
 if __name__ == "__main__":
