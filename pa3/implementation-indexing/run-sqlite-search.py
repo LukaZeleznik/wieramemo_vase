@@ -6,6 +6,7 @@ import stopwords
 import db_methods as db
 import os
 import codecs
+import time
 
 def get_query_preprocessed(text):
     # Tokenization
@@ -88,19 +89,26 @@ def output_result(result):
 def search(input_query):
     query_processed = get_query_preprocessed(input_query)
     print()
-    print("query: ",query_processed)
+    print("Results for a query: \""+input_query+"\"")
     query_tup = tuple(query_processed)
 
+    t1 = time.time()
     result = db.search_Postings(query_tup)
+    t2 = time.time()
+
+    print("Results found in " + str(round((t2-t1)*1000, 10)) + "ms.")
     output_result(result)
     return
 
 
 def main():
-    domains = ["e-prostor.gov.si", "e-uprava.gov.si", "evem.gov.si", "podatki.gov.si"]
-    print('Search: ', end=" ")
+    queries = [ "predelovalne dejavnosti", "trgovina", "social services", "hackaton", "izredni študent", "vzdrževanje stiskalnic za iverne plošče"]
+    #print('Search: ', end=" ")
     #query = input()
-    query = 'Sistem SPOT'
+
+    # Change demanded queries
+    query = queries[5]
+
     search(query)
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ import string
 import os
 import codecs
 from bs4 import BeautifulSoup, Comment
+import time
+
 
 additionally_ignored = ['x', '×', '–', '•', '©', '--', '\'\'']  # ignore like stopwords
 
@@ -206,15 +208,25 @@ def search_postings(query_tup):
 def search(input_query):
     query_processed = get_query_preprocessed(input_query)
     print()
-    print("query: ",query_processed)
+    print("Results for a query: \""+input_query+"\"")
+    print()
     query_tup = tuple(query_processed)
 
-
+    t1 = time.time()
     search_postings(query_tup)
+    t2 = time.time()
+    print()
+    print("Results found in " + str(round((t2 - t1) * 1000, 10)) + "ms.")
 
 def main():
-    print('Search: ', end=" ")
-    #query = input()
+    queries = ["predelovalne dejavnosti", "trgovina", "social services", "hackaton", "izredni študent",
+               "vzdrževanje stiskalnic za iverne plošče"]
+    # print('Search: ', end=" ")
+    # query = input()
+
+    # Change demanded queries
+    # query = queries[5]   # UNCOMMENT THIS FOR REPORT
+
     query = 'SPOT Sistem informacije'
     search(query)
 
