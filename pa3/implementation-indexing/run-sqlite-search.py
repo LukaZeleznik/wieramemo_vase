@@ -105,6 +105,8 @@ def main():
     queries = [ "predelovalne dejavnosti", "trgovina", "social services", "hackaton", "izredni študent", "vzdrževanje stiskalnic za iverne plošče"]
     #print('Search: ', end=" ")
     #query = input()
+    # query = "SPOT Sistem informacije"
+
 
     # Change demanded queries
     query = queries[5]

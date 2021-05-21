@@ -94,8 +94,8 @@ def main():
     domains = ["e-prostor.gov.si", "e-uprava.gov.si", "evem.gov.si", "podatki.gov.si"]
 
     # Delete database
-    db.delete_IndexWord()
-    db.delete_Posting()
+    #db.delete_IndexWord()
+    #db.delete_Posting()
 
     i = 1
     for domain in domains:
