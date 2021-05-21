@@ -8,6 +8,7 @@ import os
 import codecs
 from bs4 import BeautifulSoup, Comment
 import time
+import sys
 
 
 additionally_ignored = ['x', '×', '–', '•', '©', '--', '\'\'']  # ignore like stopwords
@@ -227,8 +228,12 @@ def main():
     # Change demanded queries
     # query = queries[5]   # UNCOMMENT THIS FOR REPORT
 
-    query = 'SPOT Sistem informacije'
-    search(query)
+    # PARAMETER QUERY
+    if len(sys.argv) == 2:
+        query = sys.argv[1]
+        search(query)
+    else:
+        print("Cannot read query parameter.")
 
 if __name__ == "__main__":
     main()

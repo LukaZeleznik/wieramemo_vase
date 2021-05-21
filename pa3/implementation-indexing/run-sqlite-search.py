@@ -7,6 +7,7 @@ import db_methods as db
 import os
 import codecs
 import time
+import sys
 
 def get_query_preprocessed(text):
     # Tokenization
@@ -109,9 +110,15 @@ def main():
 
 
     # Change demanded queries
-    query = queries[5]
+    #query = queries[0]
 
-    search(query)
+    # PARAMETER QUERY
+    if len(sys.argv) ==2:
+        query = sys.argv[1]
+        search(query)
+    else:
+        print("Cannot read query parameter.")
+
 
 if __name__ == "__main__":
     main()
