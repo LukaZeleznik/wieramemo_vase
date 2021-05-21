@@ -185,23 +185,22 @@ def search_postings(query_tup):
 
     i = 1
     for domain in domains:
-        if i == 1 or i == 2:  # Temporary
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webpages-data', domain)
-            # Loop through files in directory
-            for root, dirs, files in sorted(os.walk(path, topdown=True)):
-                for name in files:
-                    if name.endswith('.html') and (i == 1 or i == 2):
-                        filepath_full = os.path.join(root, name)
-                        #print(filepath_full)
-                        i += 1  # Temporary
-                        f = codecs.open(filepath_full, 'r', encoding='utf-8')
-                        page_html = f.read()
-                        website_indexing(page_html, domain, name)
-                        
-                        printHeader = True
-                        for query in query_tup:
-                            output_result(query, printHeader)
-                            printHeader = False
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'webpages-data', domain)
+        # Loop through files in directory
+        for root, dirs, files in sorted(os.walk(path, topdown=True)):
+            for name in files:
+                if name.endswith('.html'):
+                    filepath_full = os.path.join(root, name)
+                    #print(filepath_full)
+                    i += 1  # Temporary
+                    f = codecs.open(filepath_full, 'r', encoding='utf-8')
+                    page_html = f.read()
+                    website_indexing(page_html, domain, name)
+
+                    printHeader = True
+                    for query in query_tup:
+                        output_result(query, printHeader)
+                        printHeader = False
 
 
 
